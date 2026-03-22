@@ -44,7 +44,7 @@ The application solves this with a RESTful API backend, a reactive single-page f
 
 | Movie Detail | TV Show Detail (seasons accordion) | Watch History |
 |---|---|---|
-| ![detail](screenshots/16_show_detail.png) | ![tv detail](screenshots/17_show_tv_detail.png) | ![history](screenshots/30_watch_history.png) |
+| ![detail](screenshots/16_show_detail.png) | ![tv detail](screenshots/17_show_tv-show_detail.png) | ![history](screenshots/30_watch_history.png) |
 
 | Watchlists | Admin CSV Upload | Admin Sync (running) |
 |---|---|---|
@@ -210,7 +210,7 @@ Password: admin.movie.archive
 
 TV series detail shows an additional seasons/episodes accordion not present on movie pages:
 
-![TV show detail](screenshots/17_show_tv_detail.png)
+![TV show detail](screenshots/17_show_tv-show_detail.png)
 
 ### Authenticated Users
 
@@ -641,6 +641,89 @@ if raw_year and raw_year != "N/A":
         updates.append(("release_year", start_year))
     except (ValueError, IndexError):
         pass
+```
+
+### OMDb Sync — Full Data Mapping
+
+When the admin triggers a sync, every show in the database is enriched in a single background pass. The sync pipeline for each title is:
+
+```
+fetch OMDb metadata (title, plot, rating, runtime, year, type, poster)
+        │
+        ├── update shows row
+        │
+        ├── genres   → INSERT IGNORE into genres + INSERT IGNORE into show_genres
+        ├── actors   → INSERT IGNORE into actors + INSERT IGNORE into show_actors
+        ├── directors→ INSERT IGNORE into directors + INSERT IGNORE into show_directors
+        │
+        ├── if poster_url missing → extract Poster from response → UPDATE shows
+        │
+        └── if type == "series"
+                └── for each season → GET /omdb?Season=N
+                        └── for each episode → UPSERT into seasons + episodes
+```
+
+**Genres, actors, and directors** are all handled with the same idempotent pattern — `INSERT IGNORE` on the entity table guarantees no duplicates, then a second `INSERT IGNORE` on the mapping table links it to the show. Running the sync multiple times is safe:
+
+```python
+# backend/services.py — genre mapping (actors and directors follow the same pattern)
+genre_str = api_data.get("Genre", "")   # e.g. "Action, Drama, Thriller"
+if genre_str and genre_str != "N/A":
+    for genre in [g.strip() for g in genre_str.split(",") if g.strip()]:
+        # Add genre if it doesn't exist yet — silently skip if it does
+        session.execute(
+            text("INSERT IGNORE INTO genres (name) VALUES (:name)"), {"name": genre}
+        )
+        row = session.execute(
+            text("SELECT genre_id FROM genres WHERE name = :name"), {"name": genre}
+        ).fetchone()
+        # Link to this show — silently skip if already linked
+        session.execute(
+            text("INSERT IGNORE INTO show_genres (show_id, genre_id) VALUES (:sid, :gid)"),
+            {"sid": show_id, "gid": row[0]},
+        )
+```
+
+The same pattern repeats for actors (`show_actors`) and directors (`show_directors`). A genre like "Drama" that appears in 50 shows is stored once in the `genres` table and linked 50 times in `show_genres` — the relational model is always maintained correctly regardless of sync order.
+
+**Show metadata fields** are updated selectively — only fields that have actually changed are written:
+
+```python
+# backend/services.py
+for api_key, db_col in [("Title", "title"), ("Plot", "plot"), ("imdbRating", "imdb_rating")]:
+    val = api_data.get(api_key)
+    if val and val != "N/A" and str(val) != str(show.get(db_col)):
+        updates.append((db_col, val))   # only update if the value changed
+```
+
+**TV series** require an additional API call per season. Seasons and episodes are upserted with `ON DUPLICATE KEY UPDATE` so re-running the sync refreshes episode data (titles, air dates, ratings) without creating duplicates:
+
+```python
+# backend/services.py
+session.execute(text("""
+    INSERT INTO seasons (show_id, season_number, episode_count)
+    VALUES (:sid, :snum, :ecnt)
+    ON DUPLICATE KEY UPDATE episode_count = :ecnt
+"""), {"sid": show_id, "snum": season_num, "ecnt": len(episodes_raw)})
+
+# Each episode:
+session.execute(text("""
+    INSERT INTO episodes (season_id, episode_number, title, air_date, imdb_rating, imdb_id)
+    VALUES (:sid, :enum, :title, :adate, :rating, :imdb_id)
+    ON DUPLICATE KEY UPDATE title = :title, air_date = :adate, imdb_rating = :rating
+"""), {...})
+```
+
+**Error isolation** — if one show's API call fails (e.g. OMDb has no record for that IMDb ID), the session is rolled back for that show only and the sync continues with the next:
+
+```python
+for show in shows:
+    try:
+        data = await fetch_omdb_movie(show["imdb_id"], client)
+        _apply_omdb_data(show, data, session)
+        ...
+    except Exception:
+        session.rollback()   # one bad show doesn't poison the whole sync
 ```
 
 For TV series, a second API pass fetches each season:
