@@ -18,6 +18,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: #fff;
   overflow-x: hidden;
+  overflow-y: auto;
 
   /* Rich multi-stop gradient — ESSENTIAL for glass effect */
   background:
