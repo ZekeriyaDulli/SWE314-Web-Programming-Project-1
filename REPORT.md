@@ -38,9 +38,17 @@ The application solves this with a RESTful API backend, a reactive single-page f
 
 ### Screenshots
 
-| Home (unauthenticated) | Show Detail | Watch History |
+| Home (unauthenticated) | Home (logged in) | Filters applied |
 |---|---|---|
-| ![home](screenshots/01_home_browse.png) | ![detail](screenshots/16_show_detail.png) | ![history](screenshots/30_watch_history.png) |
+| ![home](screenshots/01_home_browse.png) | ![home logged in](screenshots/02_home_logged_in.png) | ![filters](screenshots/03_home_filters.png) |
+
+| Movie Detail | TV Show Detail (seasons accordion) | Watch History |
+|---|---|---|
+| ![detail](screenshots/16_show_detail.png) | ![tv detail](screenshots/17_show_tv_detail.png) | ![history](screenshots/30_watch_history.png) |
+
+| Watchlists | Admin CSV Upload | Admin Sync (running) |
+|---|---|---|
+| ![watchlists](screenshots/21_watchlists_page.png) | ![upload](screenshots/24_admin_upload_page.png) | ![sync](screenshots/27_admin_sync_running.png) |
 
 ---
 
@@ -196,6 +204,14 @@ Password: admin.movie.archive
 - **Filter & search** — by genre, release year range, minimum IMDb rating, and free-text search across titles, actors, and directors
 - **Show detail** — poster, plot, cast, genres, IMDb rating, platform average rating, user reviews; for TV series: full seasons and episodes accordion
 
+| Browse (logged out) | Filters applied | Movie detail |
+|---|---|---|
+| ![](screenshots/01_home_browse.png) | ![](screenshots/03_home_filters.png) | ![](screenshots/16_show_detail.png) |
+
+TV series detail shows an additional seasons/episodes accordion not present on movie pages:
+
+![TV show detail](screenshots/17_show_tv_detail.png)
+
 ### Authenticated Users
 
 - **Register / Login** — JWT-based authentication; passwords hashed with bcrypt
@@ -204,15 +220,27 @@ Password: admin.movie.archive
 - **Watch history** — chronological list of watched titles with ratings and review excerpts
 - **Watchlists** — create named watchlists with descriptions, add/remove titles, delete lists
 
+| Login | Register | Watch History |
+|---|---|---|
+| ![](screenshots/04_login_page.png) | ![](screenshots/07_register_page.png) | ![](screenshots/30_watch_history.png) |
+
+| Watchlists | Watchlist Detail |
+|---|---|
+| ![](screenshots/21_watchlists_page.png) | ![](screenshots/22_watchlist_detail.png) |
+
 ### Admin Only
 
 - **Upload CSV** — bulk-register new titles by uploading a plain-text file of IMDb IDs
 - **OMDb Sync** — background job that fetches full metadata, posters, genres, cast, and season/episode data for every title; real-time progress bar polled every 2 seconds
 - **Tag management** — create tags and apply them to titles for custom labelling
 
+| CSV Upload | Upload Result | Sync Running | Sync Complete |
+|---|---|---|---|
+| ![](screenshots/24_admin_upload_page.png) | ![](screenshots/25_admin_upload_result.png) | ![](screenshots/27_admin_sync_running.png) | ![](screenshots/28_admin_sync_complete.png) |
+
 ### Smart Poster Fallback
 
-The `PosterImage` component first tries `poster_url` from the database. On a missing URL or image load error, it automatically calls `https://www.omdbapi.com/?apikey=[YOUR_API_KEY]&i={imdb_id}`, extracts the `Poster` field, and renders it. A `🎬` emoji placeholder is the final fallback.
+During the OMDb sync, if a show has no `poster_url` in the database the backend extracts the `Poster` field directly from the already-fetched OMDb API response and saves it. The frontend `PosterImage` component then simply renders `poster_url`; if the URL breaks it hides the image.
 
 ### Validation Coverage
 
@@ -567,7 +595,9 @@ raise HTTPException(status_code=400, detail="A sync is already in progress.")
 
 The frontend `ErrorBanner` component renders the `detail` string directly:
 
-![Wrong credentials](screenshots/06_login_wrong_credentials.png)
+| Wrong credentials (401) | Already rated (409) |
+|---|---|
+| ![](screenshots/06_login_wrong_credentials.png) | ![](screenshots/20_rating_duplicate_error.png) |
 
 ### Service Layer Architecture
 
@@ -669,6 +699,10 @@ intervalRef.current = setInterval(async () => {
 }, 2000)
 ```
 
+| Sync in progress | Sync complete |
+|---|---|
+| ![](screenshots/27_admin_sync_running.png) | ![](screenshots/28_admin_sync_complete.png) |
+
 ### JWT Authentication
 
 Tokens are signed with `HS256` using `python-jose`. The dependency chain enforces authentication at the route level without touching route logic:
@@ -741,6 +775,12 @@ App
     ├── AdminUploadPage / AdminSyncPage
     └── ErrorBanner           reused across all pages
 ```
+
+The `Navbar` component renders different dropdown menus depending on auth state. Authenticated users see a profile dropdown; admin users get an additional admin dropdown:
+
+| User dropdown | Admin dropdown |
+|---|---|
+| ![](screenshots/08_navbar_user_dropdown.png) | ![](screenshots/09_navbar_admin_dropdown.png) |
 
 ### Props — Read-Only Data Flow
 
@@ -890,8 +930,9 @@ export default defineConfig({
 | ![](screenshots/05_login_validation_empty.png) | Required fields — empty email | HTML5 `required` attribute |
 | ![](screenshots/06_login_wrong_credentials.png) | Wrong credentials | FastAPI `HTTPException` 401 |
 | ![](screenshots/10_register_passwords_mismatch.png) | Passwords don't match | React JS check + Pydantic `@model_validator` |
-| ![](screenshots/18_rating_validation_empty.png) | Empty rating | HTML5 `required` |
+| ![](screenshots/18_rating_validation_empty.png) | Empty rating submitted | HTML5 `required` |
 | ![](screenshots/19_rating_validation_range.png) | Rating out of 1–10 range | HTML5 `max` + Pydantic `Field(ge=1, le=10)` |
+| ![](screenshots/20_rating_duplicate_error.png) | Rating a show twice | Database `UNIQUE(user_id, show_id)` → FastAPI `HTTPException` 409 |
 | ![](screenshots/23_watchlist_create_validation.png) | Watchlist name required | HTML5 `required` |
 | ![](screenshots/34_protected_route_redirect_to_login.png) | Accessing protected route unauthenticated | React `useEffect` + `navigate('/login')` |
 
