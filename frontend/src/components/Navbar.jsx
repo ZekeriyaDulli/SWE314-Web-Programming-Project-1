@@ -7,30 +7,40 @@ export default function Navbar() {
   const handleLogout = () => { logout(); navigate('/') }
 
   return (
-    <nav style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 1040,
-      background: 'rgba(18, 10, 16, 0.65)',
-      backdropFilter: 'blur(20px) saturate(200%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(200%)',
-      borderBottom: '1px solid rgba(255,255,255,0.07)',
-      boxShadow: '0 4px 30px rgba(0,0,0,0.35)',
-    }}>
-      <div className="container d-flex align-items-center py-2">
+    <nav
+      className="navbar navbar-expand-lg navbar-dark"
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1040,
+        background: 'rgba(18, 10, 16, 0.85)',
+        backdropFilter: 'blur(20px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.35)',
+      }}
+    >
+      <div className="container">
         {/* Brand */}
-        <Link to="/" className="g-brand me-auto">🎬 Movie Archive</Link>
+        <Link to="/" className="g-brand navbar-brand mb-0">🎬 Movie Archive</Link>
 
-        {/* Mobile toggle */}
-        <button className="navbar-toggler border-0 d-lg-none me-2" type="button"
-          data-bs-toggle="collapse" data-bs-target="#navMenu"
-          style={{ color: 'rgba(255,255,255,0.6)', background: 'transparent' }}>
+        {/* Mobile hamburger */}
+        <button
+          className="navbar-toggler border-0"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navMenu"
+          aria-controls="navMenu"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+          style={{ color: 'rgba(255,255,255,0.7)', boxShadow: 'none' }}
+        >
           <span className="navbar-toggler-icon" />
         </button>
 
-        {/* Links */}
-        <div className="collapse navbar-collapse d-lg-flex justify-content-end" id="navMenu">
-          <div className="d-flex align-items-center gap-2 flex-wrap">
+        {/* Collapsible menu */}
+        <div className="collapse navbar-collapse" id="navMenu">
+          <div className="ms-auto d-flex align-items-center gap-2 flex-wrap py-2 py-lg-0">
             {!isLoggedIn ? (
               <>
                 <Link to="/login" className="btn btn-sm g-btn-ghost px-4">Login</Link>
