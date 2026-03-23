@@ -1,4 +1,3 @@
-drop database movie_archive;
 create database movie_archive;
 use movie_archive;
 
