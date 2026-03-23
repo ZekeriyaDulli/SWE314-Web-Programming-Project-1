@@ -1021,4 +1021,4 @@ export default defineConfig({
 
 ---
 
-*Report prepared for ISU Web Programming — Project 1, Semester 6*
+*Report prepared for ISU SWE314-Web-Programming-Project-1*
