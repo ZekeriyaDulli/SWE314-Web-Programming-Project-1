@@ -19,7 +19,6 @@ class Settings(BaseSettings):
 
     omdb_api_key: str = ""
     admin_user_id: int = 1
-    youtube_api_key: str = ""
 
     # Frontend origin for CORS (set FRONTEND_URL in Railway env vars)
     frontend_url: str = "http://localhost:5173"
