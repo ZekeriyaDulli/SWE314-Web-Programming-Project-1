@@ -330,12 +330,33 @@ html { scrollbar-width: thin; scrollbar-color: #c94455 rgba(28,22,42,0.8); }
 }
 .g-badge-series {
   display: inline-block;
-  background: rgba(129,38,46,0.15);
-  color: #e8909a;
-  border: 1px solid rgba(129,38,46,0.45);
-  font-size: 0.68rem;
-  padding: 2px 9px;
+  background: rgba(129,38,46,0.88);
+  color: #fff;
+  border: 1px solid rgba(201,68,85,0.6);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
   border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.g-badge-movie {
+  display: inline-block;
+  background: rgba(20,14,30,0.85);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .g-badge-genre {
   display: inline-block;

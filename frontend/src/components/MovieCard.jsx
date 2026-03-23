@@ -45,10 +45,11 @@ export default function MovieCard({ show }) {
             </div>
           )}
 
-          {/* Series badge */}
-          {show.show_type === 'series' && (
-            <span className="g-badge-series" style={{ position: 'absolute', top: '8px', left: '8px' }}>Series</span>
-          )}
+          {/* Type badge */}
+          {show.show_type === 'series'
+            ? <span className="g-badge-series" style={{ position: 'absolute', top: '8px', left: '8px' }}>Series</span>
+            : <span className="g-badge-movie"  style={{ position: 'absolute', top: '8px', left: '8px' }}>Movie</span>
+          }
 
           {/* Hover overlay */}
           <div style={{
