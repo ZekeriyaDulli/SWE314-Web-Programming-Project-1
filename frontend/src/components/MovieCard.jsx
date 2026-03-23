@@ -86,104 +86,96 @@ export default function MovieCard({ show }) {
             : <span className="g-badge-movie"  style={{ position: 'absolute', top: '8px', left: '8px' }}>Movie</span>
           }
 
-          {/* Hover overlay */}
+          {/* Default hover overlay — buttons at bottom */}
           <div style={{
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to top, rgba(20,10,18,0.95) 0%, rgba(20,10,18,0.5) 50%, transparent 100%)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
             padding: '12px',
-            opacity: hovered ? 1 : 0,
+            opacity: hovered && mode === 'default' ? 1 : 0,
+            pointerEvents: hovered && mode === 'default' ? 'auto' : 'none',
             transition: 'opacity 0.25s ease',
           }}>
-
-            {/* Default mode */}
-            {mode === 'default' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                <Link to={`/shows/${show.show_id}`}
-                  style={{
-                    background: 'linear-gradient(135deg, #c94455, #81262E)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    padding: '6px 0',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    textAlign: 'center',
-                    boxShadow: '0 4px 20px rgba(201,68,85,0.45)',
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  View Details
-                </Link>
-                {isLoggedIn && (
-                  <button onClick={handleOpenWatchlist} style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.85)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '10px',
-                    padding: '6px 0',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    width: '100%',
-                  }}>
-                    {wlLoading ? '...' : '＋ Watchlist'}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Watchlist picker */}
-            {mode === 'watchlist' && (
-              <div style={{ width: '100%' }}>
-                <div style={{
-                  maxHeight: '140px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
-                  marginBottom: '6px',
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+              <Link to={`/shows/${show.show_id}`}
+                style={{
+                  background: 'linear-gradient(135deg, #c94455, #81262E)',
+                  color: '#fff', border: 'none', borderRadius: '10px',
+                  padding: '6px 0', fontSize: '0.78rem', fontWeight: 700,
+                  textDecoration: 'none', textAlign: 'center',
+                  boxShadow: '0 4px 20px rgba(201,68,85,0.45)',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                View Details
+              </Link>
+              {isLoggedIn && (
+                <button onClick={handleOpenWatchlist} style={{
+                  background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.85)',
+                  border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px',
+                  padding: '6px 0', fontSize: '0.78rem', fontWeight: 600,
+                  cursor: 'pointer', width: '100%',
                 }}>
-                  {watchlists.length === 0 ? (
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', textAlign: 'center', margin: '8px 0' }}>
-                      No watchlists yet
-                    </p>
-                  ) : watchlists.map(wl => (
-                    <button key={wl.watchlist_id} onClick={e => handleSelect(e, wl.watchlist_id)} style={{
-                      background: 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: '8px',
-                      padding: '5px 10px',
-                      fontSize: '0.75rem',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {wl.name}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={e => { e.preventDefault(); resetMode() }} style={{
-                  background: 'transparent', color: 'rgba(255,255,255,0.4)',
-                  border: 'none', fontSize: '0.72rem', cursor: 'pointer', padding: 0,
-                }}>
-                  ← Back
+                  {wlLoading ? '...' : '＋ Watchlist'}
                 </button>
-              </div>
-            )}
-
-            {/* Success */}
-            {mode === 'success' && (
-              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>✓ Added!</p>
-            )}
-
-            {/* Error */}
-            {mode === 'error' && (
-              <p style={{ color: '#ff4b5c', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>Already in list</p>
-            )}
-
+              )}
+            </div>
           </div>
+
+          {/* Watchlist picker — separate full-poster layer, flex-bounded scroll */}
+          <div style={{
+            position: 'absolute', inset: 0, overflow: 'hidden',
+            background: 'rgba(10,5,15,0.96)',
+            display: 'flex', flexDirection: 'column',
+            padding: '10px',
+            opacity: mode === 'watchlist' ? 1 : 0,
+            pointerEvents: mode === 'watchlist' ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease',
+          }}>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px', flexShrink: 0 }}>
+              Add to Watchlist
+            </p>
+            {/* flex: 1 + minHeight: 0 — the only reliable way to bound a scroll child in flex */}
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {watchlists.length === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', textAlign: 'center', margin: '8px 0' }}>
+                  No watchlists yet
+                </p>
+              ) : watchlists.map(wl => (
+                <button key={wl.watchlist_id} onClick={e => handleSelect(e, wl.watchlist_id)} style={{
+                  background: 'rgba(255,255,255,0.07)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px',
+                  padding: '5px 8px', fontSize: '0.73rem', fontWeight: 500,
+                  cursor: 'pointer', textAlign: 'left', flexShrink: 0,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {wl.name}
+                </button>
+              ))}
+            </div>
+            <button onClick={e => { e.preventDefault(); resetMode() }} style={{
+              background: 'transparent', color: 'rgba(255,255,255,0.35)',
+              border: 'none', fontSize: '0.7rem', cursor: 'pointer',
+              padding: '6px 0 0', textAlign: 'left', flexShrink: 0,
+            }}>
+              ← Back
+            </button>
+          </div>
+
+          {/* Success */}
+          {mode === 'success' && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,5,15,0.85)' }}>
+              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>✓ Added!</p>
+            </div>
+          )}
+
+          {/* Error */}
+          {mode === 'error' && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,5,15,0.85)' }}>
+              <p style={{ color: '#ff4b5c', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>Already in list</p>
+            </div>
+          )}
+
         </div>
 
         {/* Info */}

@@ -200,12 +200,12 @@ export default function ShowDetailPage() {
 
                 {/* Right: Watchlist + Mark Watched */}
                 <div className="col-lg-5">
-                  <div style={{ ...GLASS, padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ ...GLASS, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0 }}>
                     <h6 style={{ color: '#fff', fontWeight: 700, margin: 0 }}>Add to Watchlist</h6>
                     {watchlists.length === 0 ? (
                       <p className="g-dim small mb-0">No watchlists yet. <a href="/watchlists" style={{ color: '#e07080', textDecoration: 'none' }}>Create one</a>.</p>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '160px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
                         {watchlists.map(w => (
                           <button key={w.watchlist_id}
                             onClick={() => { setSelectedWl(w.watchlist_id.toString()); handleAddToWatchlistDirect(w.watchlist_id) }}
