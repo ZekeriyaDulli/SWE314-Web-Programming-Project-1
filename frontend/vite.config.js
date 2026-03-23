@@ -10,6 +10,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/poster': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })
