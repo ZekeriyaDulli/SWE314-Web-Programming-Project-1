@@ -20,6 +20,7 @@ export default function ShowDetailPage() {
   const [actionMsg, setActionMsg] = useState(null)
   const [selectedWl, setSelectedWl] = useState('')
   const [selectedTag, setSelectedTag] = useState('')
+  const [showTrailer, setShowTrailer] = useState(false)
 
   useEffect(() => {
     api.get(`/shows/${id}`)
@@ -80,6 +81,44 @@ export default function ShowDetailPage() {
 
   return (
     <div className="g-page">
+
+      {/* Trailer Modal */}
+      {showTrailer && show.trailer_url && (
+        <div
+          onClick={() => setShowTrailer(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ position: 'relative', width: '100%', maxWidth: '960px' }}
+          >
+            <button
+              onClick={() => setShowTrailer(false)}
+              style={{
+                position: 'absolute', top: '-40px', right: 0,
+                background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)',
+                fontSize: '1rem', cursor: 'pointer', fontWeight: 600, letterSpacing: '1px',
+              }}
+            >
+              ✕ Close
+            </button>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 0 80px rgba(201,68,85,0.3)' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${show.trailer_url}?autoplay=1&rel=0`}
+                title={`${show.title} Trailer`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container py-5">
         <button className="btn btn-sm g-btn-ghost mb-4" onClick={() => navigate(-1)}>← Back</button>
 
@@ -117,6 +156,27 @@ export default function ShowDetailPage() {
               {show.imdb_rating && <span className="g-badge-imdb">IMDb {show.imdb_rating}</span>}
               {show.platform_avg && <span className="g-badge-platform">★ {Number(show.platform_avg).toFixed(1)} platform</span>}
             </div>
+
+            {/* Watch Trailer */}
+            {show.trailer_url && (
+              <div className="mb-3">
+                <button
+                  onClick={() => setShowTrailer(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    background: 'linear-gradient(135deg, #c94455, #81262E)',
+                    color: '#fff', border: 'none', borderRadius: '10px',
+                    padding: '9px 20px', fontSize: '0.88rem', fontWeight: 700,
+                    cursor: 'pointer', boxShadow: '0 4px 20px rgba(201,68,85,0.4)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(201,68,85,0.55)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 20px rgba(201,68,85,0.4)' }}
+                >
+                  ▶ Watch Trailer
+                </button>
+              </div>
+            )}
 
             {/* Genres */}
             {show.genres?.length > 0 && (

@@ -67,6 +67,7 @@ class ShowResponse(BaseModel):
     imdb_rating: Optional[Decimal] = None
     plot: Optional[str] = None
     poster_url: Optional[str] = None
+    trailer_url: Optional[str] = None
     added_at: Optional[datetime] = None
     platform_avg: Optional[float] = None
     rating_count: Optional[int] = None
