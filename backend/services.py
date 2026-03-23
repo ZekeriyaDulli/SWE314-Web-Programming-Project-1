@@ -837,12 +837,16 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient) -> None:
             try:
                 data = await fetch_omdb_movie(show["imdb_id"], client)
                 _apply_omdb_data(show, data, session)
+                # Try high-res poster first, fall back to OMDb Poster field
                 if not show.get("poster_url"):
-                    poster = data.get("Poster")
-                    if poster and poster != "N/A":
+                    poster_url = await _fetch_omdb_poster(show["imdb_id"], client)
+                    if not poster_url:
+                        p = data.get("Poster", "")
+                        poster_url = p if p and p != "N/A" else None
+                    if poster_url:
                         session.execute(
                             text("UPDATE shows SET poster_url = :url WHERE show_id = :sid"),
-                            {"url": poster, "sid": show["show_id"]},
+                            {"url": poster_url, "sid": show["show_id"]},
                         )
                         session.commit()
                 # Sync seasons/episodes for TV series
