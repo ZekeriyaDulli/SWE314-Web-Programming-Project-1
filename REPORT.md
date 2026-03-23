@@ -10,11 +10,12 @@
 1. [Overview & Business Problem](#1-overview--business-problem)
 2. [Project Structure](#2-project-structure)
 3. [How to Run](#3-how-to-run)
-4. [Features](#4-features)
-5. [Week 1 — Web Fundamentals](#5-week-1--web-fundamentals)
-6. [Week 2 — Database Design & FastAPI](#6-week-2--database-design--fastapi)
-7. [Week 3 — Production-Ready APIs & External Integrations](#7-week-3--production-ready-apis--external-integrations)
-8. [Week 4 — React + Vite Frontend](#8-week-4--react--vite-frontend)
+4. [Deployment](#4-deployment)
+5. [Features](#5-features)
+6. [Week 1 — Web Fundamentals](#6-week-1--web-fundamentals)
+7. [Week 2 — Database Design & FastAPI](#7-week-2--database-design--fastapi)
+8. [Week 3 — Production-Ready APIs & External Integrations](#8-week-3--production-ready-apis--external-integrations)
+9. [Week 4 — React + Vite Frontend](#9-week-4--react--vite-frontend)
 
 ---
 
@@ -196,7 +197,44 @@ Password: admin.movie.archive
 
 ---
 
-## 4. Features
+## 4. Deployment
+
+The application is deployed on free-tier cloud services — no paid infrastructure required.
+
+| Service | Role | URL |
+|---------|------|-----|
+| Vercel | React frontend (SPA) | [swe-314-web-programming-project-1.vercel.app](https://swe-314-web-programming-project-1.vercel.app) |
+| Railway | FastAPI backend | [swe314-web-programming-project-1-production.up.railway.app](https://swe314-web-programming-project-1-production.up.railway.app) |
+| Railway | MySQL 8 database | Managed service, same Railway project |
+
+### Architecture
+
+```
+Browser (Vercel CDN)
+    │
+    ├── Static assets (React bundle, CSS, fonts)
+    │
+    └── API calls ──► Railway Backend (FastAPI + uvicorn)
+                              │
+                              ├── MySQL queries ──► Railway MySQL
+                              └── OMDb poster proxy (hides API key)
+```
+
+### Key Deployment Decisions
+
+**Poster image proxy** — During OMDb sync, poster URLs are stored as `/poster/{imdb_id}` in the database instead of the raw OMDb URL. The backend exposes `GET /poster/{imdb_id}` which fetches the high-resolution image (3000 px) from `img.omdbapi.com` server-side and streams it back with a 7-day cache header. This means the OMDb API key is never visible in the browser's network tab.
+
+**Environment-aware API base URL** — The frontend reads `VITE_API_URL` at build time. In production (Vercel) this is set to the Railway backend domain. In local development the variable is unset and Vite's dev-proxy rewrites `/api/*` and `/poster/*` to `http://localhost:8000`, so no environment file changes are needed to run locally.
+
+**SPA routing** — `frontend/vercel.json` rewrites all paths to `/index.html` so that React Router deep links (e.g. `/shows/42`) work on hard refresh.
+
+**Database URL** — Railway injects `DATABASE_URL` as a `mysql://...` connection string. `backend/database.py` detects this and converts it to `mysql+pymysql://` for SQLAlchemy/PyMySQL compatibility before the individual `DB_HOST`/`DB_USER` fields are used.
+
+For step-by-step deployment instructions see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+---
+
+## 5. Features
 
 ### Public (No Login Required)
 
@@ -254,7 +292,7 @@ During the OMDb sync, if a show has no `poster_url` in the database the backend 
 
 ---
 
-## 5. Week 1 — Web Fundamentals
+## 6. Week 1 — Web Fundamentals
 
 ### Web Evolution & the Client-Server Model
 
@@ -363,7 +401,7 @@ app.include_router(external.router)
 
 ---
 
-## 6. Week 2 — Database Design & FastAPI
+## 7. Week 2 — Database Design & FastAPI
 
 ### Relational Database Design
 
@@ -516,7 +554,7 @@ def list_shows(..., session: Session = Depends(get_session)):
 
 ---
 
-## 7. Week 3 — Production-Ready APIs & External Integrations
+## 8. Week 3 — Production-Ready APIs & External Integrations
 
 ### Pydantic Validation — Automatic 422 Responses
 
@@ -804,7 +842,7 @@ def require_admin(current_user=Depends(get_current_user)) -> dict:
 
 ---
 
-## 8. Week 4 — React + Vite Frontend
+## 9. Week 4 — React + Vite Frontend
 
 ### The React Philosophy — Declarative UI
 
