@@ -57,6 +57,20 @@ async def start_sync(
     return {"detail": "Sync started. Poll GET /admin/sync/status for progress."}
 
 
+@router.post("/sync/start-missing", status_code=202)
+async def start_sync_missing(
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    client: httpx.AsyncClient = Depends(get_http_client),
+    _=Depends(require_admin),
+):
+    status = services.get_sync_status()
+    if status.status == "running":
+        raise HTTPException(status_code=400, detail="A sync is already in progress. Check /admin/sync/status.")
+    background_tasks.add_task(services.run_full_sync, session, client, True)
+    return {"detail": "Missing-only sync started. Poll GET /admin/sync/status for progress."}
+
+
 @router.get("/sync/status", response_model=SyncStatusResponse)
 def sync_status(_=Depends(require_admin)):
     return services.get_sync_status()
