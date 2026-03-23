@@ -847,16 +847,22 @@ def get_sync_status() -> SyncStatusResponse:
     return SyncStatusResponse(**_sync_state)
 
 
-async def run_full_sync(session: Session, client: httpx.AsyncClient) -> None:
+async def run_full_sync(session: Session, client: httpx.AsyncClient, missing_only: bool = False) -> None:
     async with _sync_lock:
         if _sync_state["status"] == "running":
             return
         _sync_state.update({"status": "running", "current": 0, "total": 0, "message": "Initializing..."})
 
     try:
-        result = session.execute(
-            text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url FROM shows")
-        )
+        if missing_only:
+            sql = text(
+                "SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url "
+                "FROM shows "
+                "WHERE title IS NULL OR imdb_rating IS NULL OR poster_url IS NULL OR trailer_url IS NULL"
+            )
+        else:
+            sql = text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url FROM shows")
+        result = session.execute(sql)
         shows = [dict(r) for r in result.mappings().all()]
         total = len(shows)
         _sync_state.update({"total": total, "message": f"Found {total} shows to sync."})
