@@ -5,6 +5,8 @@ A full-stack web application for discovering, tracking, and rating movies and TV
 > **Course:** Web Programming — Semester 6
 > **Stack:** FastAPI · MySQL · React 18 · Vite · Bootstrap 5
 
+**Live demo:** [swe-314-web-programming-project-1.vercel.app](https://swe-314-web-programming-project-1.vercel.app)
+
 ---
 
 ## Tech Stack
@@ -190,6 +192,24 @@ During sync, if a show has no `poster_url`, the backend extracts the `Poster` fi
 - Axios interceptor automatically attaches `Authorization: Bearer {token}` to every request
 - `useEffect` with a `[]` dependency array fetches data on mount; protected pages redirect to `/login` if unauthenticated
 - `useState` drives all dynamic UI — filters, loading spinners, error banners, hover states
+
+---
+
+---
+
+## Deployment
+
+The application is deployed on free-tier cloud services:
+
+| Service | Role | URL |
+|---------|------|-----|
+| Vercel | React frontend | [swe-314-web-programming-project-1.vercel.app](https://swe-314-web-programming-project-1.vercel.app) |
+| Railway | FastAPI backend | [swe314-web-programming-project-1-production.up.railway.app](https://swe314-web-programming-project-1-production.up.railway.app) |
+| Railway | MySQL database | Managed by Railway, same project |
+
+Poster images are proxied through the backend (`GET /poster/{imdb_id}`) so the OMDb API key is never exposed to the browser.
+
+For full deployment instructions see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
