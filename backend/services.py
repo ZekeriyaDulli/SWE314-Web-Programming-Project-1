@@ -131,7 +131,7 @@ def get_user_by_id(user_id: int, session: Session) -> dict:
 _SHOWS_SELECT = """
     SELECT
         s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
-        s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.added_at,
+        s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
         GROUP_CONCAT(DISTINCT a.full_name SEPARATOR ', ') AS actors,
         GROUP_CONCAT(DISTINCT d.full_name SEPARATOR ', ') AS directors,
         ROUND(AVG(ur.rating), 2) AS platform_avg,
@@ -185,7 +185,7 @@ def get_show_detail(show_id: int, user_id: Optional[int], session: Session) -> d
             {_SHOWS_SELECT}
             WHERE s.show_id = :sid
             GROUP BY s.show_id, s.imdb_id, s.title, s.release_year, s.duration_minutes,
-                     s.plot, s.imdb_rating, s.poster_url, s.added_at
+                     s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at
         """),
         {"sid": show_id},
     )
@@ -713,6 +713,31 @@ async def fetch_omdb_movie(imdb_id: str, client: httpx.AsyncClient) -> dict:
     return data
 
 
+async def _fetch_youtube_trailer(title: str, year: Optional[int], client: httpx.AsyncClient) -> Optional[str]:
+    """Search YouTube Data API v3 for a trailer and return the video ID."""
+    if not settings.youtube_api_key:
+        return None
+    try:
+        query = f"{title} {year or ''} official trailer"
+        r = await client.get(
+            "https://www.googleapis.com/youtube/v3/search",
+            params={
+                "part": "id",
+                "q": query,
+                "type": "video",
+                "maxResults": 1,
+                "key": settings.youtube_api_key,
+            },
+            timeout=5.0,
+        )
+        items = r.json().get("items", [])
+        if items:
+            return items[0]["id"]["videoId"]
+    except Exception:
+        pass
+    return None
+
+
 async def _fetch_omdb_poster(imdb_id: str, client: httpx.AsyncClient) -> Optional[str]:
     try:
         r = await client.get(
@@ -824,7 +849,7 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient) -> None:
 
     try:
         result = session.execute(
-            text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url FROM shows")
+            text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url FROM shows")
         )
         shows = [dict(r) for r in result.mappings().all()]
         total = len(shows)
@@ -849,6 +874,19 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient) -> None:
                         session.execute(
                             text("UPDATE shows SET poster_url = :url WHERE show_id = :sid"),
                             {"url": poster_url, "sid": show["show_id"]},
+                        )
+                        session.commit()
+                # Fetch YouTube trailer if not already set
+                if not show.get("trailer_url"):
+                    video_id = await _fetch_youtube_trailer(
+                        show.get("title") or data.get("Title", ""),
+                        show.get("release_year"),
+                        client,
+                    )
+                    if video_id:
+                        session.execute(
+                            text("UPDATE shows SET trailer_url = :vid WHERE show_id = :sid"),
+                            {"vid": video_id, "sid": show["show_id"]},
                         )
                         session.commit()
                 # Sync seasons/episodes for TV series
