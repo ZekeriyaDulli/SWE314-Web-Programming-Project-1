@@ -53,13 +53,14 @@ export default function ShowDetailPage() {
     }
   }
 
-  const handleAddToWatchlist = async () => {
-    if (!selectedWl) return
+  const handleAddToWatchlistDirect = async (watchlistId) => {
     try {
-      await api.post(`/watchlists/${selectedWl}/shows`, { show_id: parseInt(id) })
+      await api.post(`/watchlists/${watchlistId}/shows`, { show_id: parseInt(id) })
       setActionMsg({ type: 'success', text: 'Added to watchlist!' })
+      setTimeout(() => setActionMsg(null), 2000)
     } catch (err) {
       setActionMsg({ type: 'danger', text: err.response?.data?.detail ?? 'Failed to add to watchlist.' })
+      setTimeout(() => setActionMsg(null), 2000)
     }
   }
 
@@ -160,59 +161,80 @@ export default function ShowDetailPage() {
               )}
             </div>
 
-            {/* Actions */}
-            {isLoggedIn ? (
-              <div className="d-flex flex-wrap gap-3 mb-4">
-                {!show.is_watched && (
-                  <button className="btn btn-sm" style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)', color: '#4ade80', borderRadius: '10px', fontWeight: 600 }}
-                    onClick={handleMarkWatched}>✓ Mark as Watched</button>
-                )}
-                {watchlists.length > 0 && (
-                  <div className="d-flex gap-2">
-                    <select className="form-select form-select-sm" style={{ ...INPUT, maxWidth: '200px' }}
-                      value={selectedWl} onChange={e => setSelectedWl(e.target.value)}>
-                      <option value="">Add to watchlist...</option>
-                      {watchlists.map(w => <option key={w.watchlist_id} value={w.watchlist_id}>{w.name}</option>)}
-                    </select>
-                    <button className="btn btn-sm g-btn-accent" onClick={handleAddToWatchlist}>Add</button>
-                  </div>
-                )}
-              </div>
-            ) : (
+            {/* Not logged in */}
+            {!isLoggedIn && (
               <p className="g-muted small">
                 <a href="/login" style={{ color: '#e07080', textDecoration: 'none' }}>Log in</a> to rate, track, or add to watchlist.
               </p>
             )}
 
-            {/* Rating Form */}
+            {/* Rate + Watchlist — side by side */}
             {isLoggedIn && (
-              <div style={{ ...GLASS, padding: '1rem' }}>
-                <h6 style={{ color: '#fff', fontWeight: 700 }} className="mb-3">Rate This Movie</h6>
-                {actionMsg && (
-                  <div style={{
-                    padding: '8px 12px', borderRadius: '10px', marginBottom: '12px', fontSize: '0.875rem',
-                    background: actionMsg.type === 'success' ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)',
-                    border: `1px solid ${actionMsg.type === 'success' ? 'rgba(74,222,128,0.35)' : 'rgba(248,113,113,0.35)'}`,
-                    color: actionMsg.type === 'success' ? '#4ade80' : '#f87171',
-                  }}>{actionMsg.text}</div>
-                )}
-                <form onSubmit={handleRate}>
-                  <div className="row g-2">
-                    <div className="col-md-3">
+              <div className="row g-3">
+
+                {/* Left: Rate */}
+                <div className="col-lg-7">
+                  <div style={{ ...GLASS, padding: '1.25rem', height: '100%' }}>
+                    <h6 style={{ color: '#fff', fontWeight: 700, marginBottom: '1rem' }}>
+                      Rate This {show.show_type === 'series' ? 'Series' : 'Movie'}
+                    </h6>
+                    {actionMsg && (
+                      <div style={{
+                        padding: '8px 12px', borderRadius: '10px', marginBottom: '12px', fontSize: '0.85rem',
+                        background: actionMsg.type === 'success' ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)',
+                        border: `1px solid ${actionMsg.type === 'success' ? 'rgba(74,222,128,0.35)' : 'rgba(248,113,113,0.35)'}`,
+                        color: actionMsg.type === 'success' ? '#4ade80' : '#f87171',
+                      }}>{actionMsg.text}</div>
+                    )}
+                    <form onSubmit={handleRate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <input type="number" className="form-control form-control-sm" style={INPUT}
                         placeholder="Rating 1–10" min="1" max="10" required
                         value={ratingForm.rating} onChange={e => setRatingForm(f => ({ ...f, rating: e.target.value }))} />
-                    </div>
-                    <div className="col-md-7">
-                      <input type="text" className="form-control form-control-sm" style={INPUT}
-                        placeholder="Review (optional)"
+                      <textarea className="form-control" style={{ ...INPUT, resize: 'none', lineHeight: 1.6 }}
+                        placeholder="Write your review... (optional)" rows={4}
                         value={ratingForm.review_text} onChange={e => setRatingForm(f => ({ ...f, review_text: e.target.value }))} />
-                    </div>
-                    <div className="col-md-2">
-                      <button type="submit" className="btn btn-sm g-btn-accent w-100">Submit</button>
-                    </div>
+                      <button type="submit" className="btn btn-sm g-btn-accent w-100">Submit Rating</button>
+                    </form>
                   </div>
-                </form>
+                </div>
+
+                {/* Right: Watchlist + Mark Watched */}
+                <div className="col-lg-5">
+                  <div style={{ ...GLASS, padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <h6 style={{ color: '#fff', fontWeight: 700, margin: 0 }}>Add to Watchlist</h6>
+                    {watchlists.length === 0 ? (
+                      <p className="g-dim small mb-0">No watchlists yet. <a href="/watchlists" style={{ color: '#e07080', textDecoration: 'none' }}>Create one</a>.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '160px' }}>
+                        {watchlists.map(w => (
+                          <button key={w.watchlist_id}
+                            onClick={() => { setSelectedWl(w.watchlist_id.toString()); handleAddToWatchlistDirect(w.watchlist_id) }}
+                            style={{
+                              background: selectedWl === w.watchlist_id.toString() ? 'rgba(201,68,85,0.2)' : 'rgba(255,255,255,0.05)',
+                              border: selectedWl === w.watchlist_id.toString() ? '1px solid rgba(201,68,85,0.5)' : '1px solid rgba(255,255,255,0.10)',
+                              borderRadius: '10px', color: '#fff', padding: '7px 12px',
+                              fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer',
+                              textAlign: 'left', transition: 'all 0.18s',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,68,85,0.15)'; e.currentTarget.style.borderColor = 'rgba(201,68,85,0.4)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = selectedWl === w.watchlist_id.toString() ? 'rgba(201,68,85,0.2)' : 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = selectedWl === w.watchlist_id.toString() ? 'rgba(201,68,85,0.5)' : 'rgba(255,255,255,0.10)' }}
+                          >
+                            + {w.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {!show.is_watched && (
+                      <button className="btn btn-sm mt-auto" style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)', color: '#4ade80', borderRadius: '10px', fontWeight: 600 }}
+                        onClick={handleMarkWatched}>✓ Mark as Watched</button>
+                    )}
+                    {show.is_watched && (
+                      <span className="g-badge-watched text-center mt-auto">✓ Already Watched</span>
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
           </div>
