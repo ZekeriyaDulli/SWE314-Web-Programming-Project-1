@@ -25,6 +25,7 @@ export default function HomePage() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ genre_id: '', min_year: '', max_year: '', min_rating: '', search: '' })
+  const [typeFilter, setTypeFilter] = useState('')
 
   useEffect(() => {
     api.get('/shows/genres').then(r => setGenres(r.data)).catch(() => {})
@@ -42,8 +43,10 @@ export default function HomePage() {
 
   const handleReset = () => {
     const empty = { genre_id: '', min_year: '', max_year: '', min_rating: '', search: '' }
-    setFilters(empty); fetchShows({})
+    setFilters(empty); setTypeFilter(''); fetchShows({})
   }
+
+  const visibleShows = typeFilter ? shows.filter(s => s.show_type === typeFilter) : shows
 
   return (
     <div className="g-page">
@@ -87,9 +90,25 @@ export default function HomePage() {
                   onChange={e => setFilters(f => ({ ...f, search: e.target.value }))} />
               </div>
             </div>
-            <div className="d-flex gap-2 mt-3">
+            <div className="d-flex gap-2 mt-3 align-items-center flex-wrap">
               <button type="submit" className="btn btn-sm g-btn-accent px-4">Apply Filters</button>
               <button type="button" className="btn btn-sm g-btn-ghost px-3" onClick={handleReset}>Reset</button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                {[['', 'All'], ['movie', 'Movies'], ['series', 'Series']].map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setTypeFilter(val)} style={{
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.4px',
+                    border: typeFilter === val ? '1px solid rgba(201,68,85,0.7)' : '1px solid rgba(255,255,255,0.12)',
+                    background: typeFilter === val ? 'rgba(201,68,85,0.25)' : 'rgba(255,255,255,0.05)',
+                    color: typeFilter === val ? '#e07080' : 'rgba(255,255,255,0.5)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}>{label}</button>
+                ))}
+              </div>
             </div>
           </form>
         </div>
@@ -97,13 +116,13 @@ export default function HomePage() {
         {/* Results */}
         {loading ? (
           <div className="text-center py-5 g-muted">Loading titles...</div>
-        ) : shows.length === 0 ? (
+        ) : visibleShows.length === 0 ? (
           <div className="text-center py-5 g-muted">No titles found matching your filters.</div>
         ) : (
           <>
-            <p className="g-muted small mb-3">{shows.length} title{shows.length !== 1 ? 's' : ''} found</p>
+            <p className="g-muted small mb-3">{visibleShows.length} title{visibleShows.length !== 1 ? 's' : ''} found</p>
             <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
-              {shows.map(show => <MovieCard key={show.show_id} show={show} />)}
+              {visibleShows.map(show => <MovieCard key={show.show_id} show={show} />)}
             </div>
           </>
         )}
