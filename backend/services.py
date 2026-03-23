@@ -837,10 +837,12 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient) -> None:
             try:
                 data = await fetch_omdb_movie(show["imdb_id"], client)
                 _apply_omdb_data(show, data, session)
-                # Try high-res poster first, fall back to OMDb Poster field
+                # Try high-res poster first; save as proxy path to avoid exposing API key
                 if not show.get("poster_url"):
-                    poster_url = await _fetch_omdb_poster(show["imdb_id"], client)
-                    if not poster_url:
+                    hi_res = await _fetch_omdb_poster(show["imdb_id"], client)
+                    if hi_res:
+                        poster_url = f"/poster/{show['imdb_id']}"
+                    else:
                         p = data.get("Poster", "")
                         poster_url = p if p and p != "N/A" else None
                     if poster_url:
