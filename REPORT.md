@@ -238,9 +238,10 @@ For step-by-step deployment instructions see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Public (No Login Required)
 
-- **Browse catalogue** — full grid of all movies and TV series with poster images
+- **Browse catalogue** — full grid of all movies and TV series with poster images; on mobile a collapsible "⚙ Filters" toggle keeps the interface clean
 - **Filter & search** — by genre, release year range, minimum IMDb rating, and free-text search across titles, actors, and directors
 - **Show detail** — poster, plot, cast, genres, IMDb rating, platform average rating, user reviews; for TV series: full seasons and episodes accordion
+- **Watch Trailer** — if a trailer has been synced, a "▶ Watch Trailer" button opens the YouTube video in a full-screen overlay modal without leaving the page
 
 | Browse (logged out) | Filters applied | Movie detail |
 |---|---|---|
@@ -269,7 +270,9 @@ TV series detail shows an additional seasons/episodes accordion not present on m
 ### Admin Only
 
 - **Upload CSV** — bulk-register new titles by uploading a plain-text file of IMDb IDs
-- **OMDb Sync** — background job that fetches full metadata, posters, genres, cast, and season/episode data for every title; real-time progress bar polled every 2 seconds
+- **OMDb Sync (Full)** — background job that re-fetches full metadata, posters, genres, cast, and season/episode data for every title; real-time progress bar polled every 2 seconds
+- **OMDb Sync (Missing Only)** — targeted variant that only processes titles where `title`, `imdb_rating`, `poster_url`, or `trailer_url` is `NULL`; drastically faster than a full re-sync on large catalogues
+- **YouTube Trailer Sync** — during any sync, if a title has no `trailer_url` the backend scrapes the first organic YouTube search result for `"<title> (<year>) official trailer"` and stores the 11-character video ID
 - **Tag management** — create tags and apply them to titles for custom labelling
 
 | CSV Upload | Upload Result | Sync Running | Sync Complete |
@@ -828,6 +831,73 @@ intervalRef.current = setInterval(async () => {
 |---|---|
 | ![](screenshots/27_admin_sync_running.png) | ![](screenshots/28_admin_sync_complete.png) |
 
+### Sync Missing Only
+
+For large catalogues, running a full sync every time is slow. A second endpoint — `POST /admin/sync/start-missing` — triggers the same background job but with a filtered query:
+
+```python
+# backend/services.py
+if missing_only:
+    sql = text(
+        "SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, "
+        "imdb_rating, poster_url, trailer_url FROM shows "
+        "WHERE title IS NULL OR imdb_rating IS NULL OR poster_url IS NULL OR trailer_url IS NULL"
+    )
+else:
+    sql = text("SELECT show_id, imdb_id, ... FROM shows")
+```
+
+The frontend admin page exposes both modes as two clearly labelled buttons:
+
+- **▶ Full Sync** (crimson) — re-processes every title
+- **⚡ Sync Missing Only** (amber) — skips titles that already have all four key fields populated
+
+Both share the same `asyncio.Lock`-protected state machine and the same polling progress bar, so the UI is identical once a sync is running.
+
+### YouTube Trailer Scraping
+
+YouTube Data API v3 allows only 100 search queries per day (100 units/search against a 10,000-unit daily quota). With ~3,700 titles this makes API-based trailer fetching impractical. Instead, the backend scrapes YouTube's HTML search results page directly — no API key required:
+
+```python
+# backend/services.py
+async def _fetch_youtube_trailer(title, year, client):
+    import re
+    query = f"{title} ({year}) official trailer"
+    r = await client.get(
+        "https://www.youtube.com/results",
+        params={"search_query": query},
+        headers={"Accept-Language": "en-US,en;q=0.9"},
+        timeout=8.0,
+    )
+    match = re.search(r'"videoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})"', r.text)
+    return match.group(1) if match else None
+```
+
+The key insight is targeting `"videoRenderer":{"videoId":"..."` specifically — this renderer is exclusive to **organic search results**. Ads on the same page use `promotedSparklesWebRenderer` / `searchPyvRenderer`, so the regex never matches them. Only the 11-character video ID is stored in the `trailer_url VARCHAR(20)` column; the full YouTube URL is assembled at render time.
+
+### Watch Trailer — In-Page Modal
+
+When a `trailer_url` is present, the show detail page renders a "▶ Watch Trailer" button. Clicking it opens an overlay modal with an embedded YouTube iframe — the user never leaves the site:
+
+```jsx
+// frontend/src/pages/ShowDetailPage.jsx
+{show.trailer_url && (
+  <button onClick={() => setShowTrailer(true)}>▶ Watch Trailer</button>
+)}
+
+{showTrailer && show.trailer_url && (
+  <div onClick={() => setShowTrailer(false)}
+    style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.92)' }}>
+    <iframe
+      src={`https://www.youtube.com/embed/${show.trailer_url}?autoplay=1&rel=0`}
+      allow="autoplay; fullscreen"
+    />
+  </div>
+)}
+```
+
+Clicking outside the video closes the modal. Autoplay is enabled via the `?autoplay=1` query parameter.
+
 ### JWT Authentication
 
 Tokens are signed with `HS256` using `python-jose`. The dependency chain enforces authentication at the route level without touching route logic:
@@ -906,6 +976,15 @@ The `Navbar` component renders different dropdown menus depending on auth state.
 | User dropdown | Admin dropdown | Quick-add to watchlist (card hover) |
 |---|---|---|
 | ![](screenshots/08_navbar_user_dropdown.png) | ![](screenshots/09_navbar_admin_dropdown.png) | ![](screenshots/11_show_card_add_to_watchlist.png) |
+
+### Mobile Responsiveness
+
+The navbar uses Bootstrap 5's `navbar-expand-lg` collapse system — on screens narrower than 992 px the links collapse into a hamburger button driven by `data-bs-toggle="collapse"`. This required explicit `navbar navbar-expand-lg navbar-dark` classes on the `<nav>` element; without them Bootstrap's JS ignores the toggle entirely.
+
+The homepage filter bar uses a two-tier layout:
+
+- **Desktop (≥ 768 px):** all five filter fields are always visible in a single row alongside the type pills (All / Movies / Series).
+- **Mobile (< 768 px):** the type pills are always visible; filter fields are hidden by default behind a "⚙ Filters" toggle button. Clicking it sets `filtersOpen` state to `true`, swapping the Bootstrap `d-none d-md-flex` class off the filter row. The desktop layout is untouched — `d-md-flex` keeps fields visible on larger screens regardless of state.
 
 ### Props — Read-Only Data Flow
 
