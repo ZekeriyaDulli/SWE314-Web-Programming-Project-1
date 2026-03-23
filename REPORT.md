@@ -224,9 +224,9 @@ TV series detail shows an additional seasons/episodes accordion not present on m
 |---|---|---|
 | ![](screenshots/04_login_page.png) | ![](screenshots/07_register_page.png) | ![](screenshots/30_watch_history.png) |
 
-| Watchlists | Watchlist Detail |
-|---|---|
-| ![](screenshots/21_watchlists_page.png) | ![](screenshots/22_watchlist_detail.png) |
+| Watchlists | Watchlist Detail | Quick-add from card |
+|---|---|---|
+| ![](screenshots/21_watchlists_page.png) | ![](screenshots/22_watchlist_detail.png) | ![](screenshots/11_show_card_add_to_watchlist.png) |
 
 ### Admin Only
 
@@ -861,9 +861,9 @@ App
 
 The `Navbar` component renders different dropdown menus depending on auth state. Authenticated users see a profile dropdown; admin users get an additional admin dropdown:
 
-| User dropdown | Admin dropdown |
-|---|---|
-| ![](screenshots/08_navbar_user_dropdown.png) | ![](screenshots/09_navbar_admin_dropdown.png) |
+| User dropdown | Admin dropdown | Quick-add to watchlist (card hover) |
+|---|---|---|
+| ![](screenshots/08_navbar_user_dropdown.png) | ![](screenshots/09_navbar_admin_dropdown.png) | ![](screenshots/11_show_card_add_to_watchlist.png) |
 
 ### Props — Read-Only Data Flow
 
