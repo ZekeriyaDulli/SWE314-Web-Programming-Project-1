@@ -28,11 +28,11 @@ export default function AdminSyncPage() {
     }, 2000)
   }
 
-  const handleStartSync = async () => {
+  const handleStartSync = async (missingOnly = false) => {
     setError(null)
     try {
-      await api.post('/admin/sync/start')
-      setStatus(s => ({ ...s, status: 'running', message: 'Sync started...' }))
+      await api.post(missingOnly ? '/admin/sync/start-missing' : '/admin/sync/start')
+      setStatus(s => ({ ...s, status: 'running', message: missingOnly ? 'Syncing missing values...' : 'Sync started...' }))
       startPolling()
     } catch (err) {
       setError(err.response?.data?.detail ?? 'Failed to start sync.')
@@ -56,13 +56,32 @@ export default function AdminSyncPage() {
 
         <div style={{ ...GLASS, padding: '1.5rem' }}>
           <p className="g-muted small mb-4">
-            Fetches updated metadata (including seasons &amp; episodes for TV series) and posters for all titles from OMDb.
+            Fetches metadata (including seasons &amp; episodes for TV series), posters, and trailers from OMDb / YouTube.
           </p>
 
-          <button className="btn btn-sm g-btn-accent px-4 mb-4" disabled={isRunning} onClick={handleStartSync}
-            style={{ opacity: isRunning ? 0.6 : 1 }}>
-            {isRunning ? '⟳ Syncing...' : '▶ Start Sync'}
-          </button>
+          <div className="d-flex gap-3 flex-wrap mb-4">
+            <div>
+              <button className="btn btn-sm g-btn-accent px-4" disabled={isRunning} onClick={() => handleStartSync(false)}
+                style={{ opacity: isRunning ? 0.6 : 1 }}>
+                {isRunning ? '⟳ Syncing...' : '▶ Full Sync'}
+              </button>
+              <p className="g-muted mt-1" style={{ fontSize: '0.72rem' }}>Re-syncs all titles</p>
+            </div>
+            <div>
+              <button className="btn btn-sm px-4" disabled={isRunning} onClick={() => handleStartSync(true)}
+                style={{
+                  opacity: isRunning ? 0.6 : 1,
+                  background: 'rgba(251,191,36,0.12)',
+                  border: '1px solid rgba(251,191,36,0.35)',
+                  color: '#fbbf24',
+                  borderRadius: '10px',
+                  fontWeight: 600,
+                }}>
+                {isRunning ? '⟳ Syncing...' : '⚡ Sync Missing Only'}
+              </button>
+              <p className="g-muted mt-1" style={{ fontSize: '0.72rem' }}>Only titles missing metadata, poster, or trailer</p>
+            </div>
+          </div>
 
           {status.status !== 'idle' && (
             <>
