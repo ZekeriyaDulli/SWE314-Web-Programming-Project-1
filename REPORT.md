@@ -310,12 +310,12 @@ The DNS lookup and IP routing lifecycle applies: when the browser makes `GET htt
 Every API endpoint follows the full URL structure deliberately:
 
 ```
-http://localhost:8000/shows/42?genre_id=3&min_rating=7.0
-│         │          │     │  └─────────────── Query parameters (optional filters)
-│         │          │     └───────────────── Path parameter (show_id = 42)
-│         │          └─────────────────────── Resource path (/shows)
-│         └────────────────────────────────── Host + port
-└──────────────────────────────────────────── Protocol
+https://swe314-web-programming-project-1-production.up.railway.app/shows/42?genre_id=3&min_rating=7.0
+│       │                                                           │     │  └─── Query parameters (optional filters)
+│       │                                                           │     └────── Path parameter (show_id = 42)
+│       │                                                           └──────────── Resource path (/shows)
+│       └───────────────────────────────────────────────────────────────────────── Host (Railway deployment)
+└───────────────────────────────────────────────────────────────────────────────── Protocol (HTTPS in production)
 ```
 
 ### HTTP Methods & Status Codes
