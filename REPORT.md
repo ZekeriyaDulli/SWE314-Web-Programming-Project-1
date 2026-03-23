@@ -279,6 +279,10 @@ TV series detail shows an additional seasons/episodes accordion not present on m
 |---|---|---|---|
 | ![](screenshots/24_admin_upload_page.png) | ![](screenshots/25_admin_upload_result.png) | ![](screenshots/27_admin_sync_running.png) | ![](screenshots/28_admin_sync_complete.png) |
 
+| Trailer button on detail page | Trailer modal (mid-playback) |
+|---|---|
+| ![](screenshots/38_show_detail_trailer_button.png) | ![](screenshots/39_trailer_modal.png) |
+
 ### Smart Poster Fallback
 
 During the OMDb sync, if a show has no `poster_url` in the database the backend extracts the `Poster` field directly from the already-fetched OMDb API response and saves it. The frontend `PosterImage` component then simply renders `poster_url`; if the URL breaks it hides the image.
@@ -897,6 +901,10 @@ When a `trailer_url` is present, the show detail page renders a "▶ Watch Trail
 ```
 
 Clicking outside the video closes the modal. Autoplay is enabled via the `?autoplay=1` query parameter.
+
+| Watch Trailer button | Trailer modal (mid-playback) |
+|---|---|
+| ![](screenshots/38_show_detail_trailer_button.png) | ![](screenshots/39_trailer_modal.png) |
 
 ### JWT Authentication
 
