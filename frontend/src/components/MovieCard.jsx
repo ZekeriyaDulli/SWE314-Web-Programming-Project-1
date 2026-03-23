@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PosterImage from './PosterImage'
+import { useAuth } from '../context/AuthContext'
+import api from '../api/client'
 
 const GLASS_CARD = {
   position: 'relative',
@@ -23,14 +25,47 @@ const GLASS_CARD_HOVER = {
 }
 
 export default function MovieCard({ show }) {
-  const [hovered, setHovered] = useState(false)
+  const { isLoggedIn } = useAuth()
+  const [hovered, setHovered]       = useState(false)
+  const [mode, setMode]             = useState('default') // 'default' | 'watchlist' | 'success' | 'error'
+  const [watchlists, setWatchlists] = useState([])
+  const [wlLoading, setWlLoading]   = useState(false)
+
+  const resetMode = () => setMode('default')
+
+  const handleOpenWatchlist = async (e) => {
+    e.preventDefault()
+    setWlLoading(true)
+    try {
+      const r = await api.get('/watchlists')
+      setWatchlists(r.data)
+      setMode('watchlist')
+    } catch {
+      setMode('error')
+      setTimeout(resetMode, 1500)
+    } finally {
+      setWlLoading(false)
+    }
+  }
+
+  const handleSelect = async (e, watchlistId) => {
+    e.preventDefault()
+    try {
+      await api.post(`/watchlists/${watchlistId}/shows`, { show_id: show.show_id })
+      setMode('success')
+      setTimeout(resetMode, 1400)
+    } catch {
+      setMode('error')
+      setTimeout(resetMode, 1400)
+    }
+  }
 
   return (
     <div className="col">
       <div
         style={hovered ? GLASS_CARD_HOVER : GLASS_CARD}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseLeave={() => { setHovered(false); resetMode() }}
       >
         {/* Poster */}
         <div style={{ position: 'relative', aspectRatio: '2/3', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
@@ -54,27 +89,100 @@ export default function MovieCard({ show }) {
           {/* Hover overlay */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(20,10,18,0.92) 0%, rgba(20,10,18,0.4) 45%, transparent 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(to top, rgba(20,10,18,0.95) 0%, rgba(20,10,18,0.5) 50%, transparent 100%)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+            padding: '12px',
             opacity: hovered ? 1 : 0,
             transition: 'opacity 0.25s ease',
           }}>
-            <Link to={`/shows/${show.show_id}`}
-              style={{
-                background: 'linear-gradient(135deg, #c94455, #81262E)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '7px 18px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                boxShadow: '0 4px 20px rgba(201,68,85,0.45)',
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              View Details
-            </Link>
+
+            {/* Default mode */}
+            {mode === 'default' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                <Link to={`/shows/${show.show_id}`}
+                  style={{
+                    background: 'linear-gradient(135deg, #c94455, #81262E)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '6px 0',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(201,68,85,0.45)',
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  View Details
+                </Link>
+                {isLoggedIn && (
+                  <button onClick={handleOpenWatchlist} style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.85)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '10px',
+                    padding: '6px 0',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}>
+                    {wlLoading ? '...' : '＋ Watchlist'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Watchlist picker */}
+            {mode === 'watchlist' && (
+              <div style={{ width: '100%' }}>
+                <div style={{
+                  maxHeight: '140px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px',
+                  marginBottom: '6px',
+                }}>
+                  {watchlists.length === 0 ? (
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', textAlign: 'center', margin: '8px 0' }}>
+                      No watchlists yet
+                    </p>
+                  ) : watchlists.map(wl => (
+                    <button key={wl.watchlist_id} onClick={e => handleSelect(e, wl.watchlist_id)} style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '8px',
+                      padding: '5px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {wl.name}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={e => { e.preventDefault(); resetMode() }} style={{
+                  background: 'transparent', color: 'rgba(255,255,255,0.4)',
+                  border: 'none', fontSize: '0.72rem', cursor: 'pointer', padding: 0,
+                }}>
+                  ← Back
+                </button>
+              </div>
+            )}
+
+            {/* Success */}
+            {mode === 'success' && (
+              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>✓ Added!</p>
+            )}
+
+            {/* Error */}
+            {mode === 'error' && (
+              <p style={{ color: '#ff4b5c', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>Already in list</p>
+            )}
+
           </div>
         </div>
 
