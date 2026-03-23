@@ -539,6 +539,10 @@ def list_shows(
 
 FastAPI auto-generates Swagger UI at `/docs` from Python type hints — zero manual documentation effort.
 
+| Swagger UI overview | Endpoint expanded | Try it out — live response |
+|---|---|---|
+| ![swagger overview](screenshots/35_swagger_overview.png) | ![endpoint expanded](screenshots/36_swagger_endpoint_expanded.png) | ![try it out](screenshots/37_swagger_try_it_out.png) |
+
 ### Database Session as a Dependency
 
 ```python
