@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import external, history, ratings, shows, tags, watchlists, users
+from routers.external import poster_router
 
 # Module-level client shared across the app lifetime
 http_client: httpx.AsyncClient | None = None
@@ -48,6 +49,7 @@ app.include_router(history.router)
 app.include_router(watchlists.router)
 app.include_router(tags.router)
 app.include_router(external.router)
+app.include_router(poster_router)
 
 
 @app.get("/", tags=["health"])
