@@ -714,9 +714,16 @@ async def fetch_omdb_movie(imdb_id: str, client: httpx.AsyncClient) -> dict:
 
 
 async def _fetch_youtube_trailer(title: str, year: Optional[int], client: httpx.AsyncClient) -> Optional[str]:
-    """Scrape YouTube search results for a trailer video ID — no API key or quota needed."""
+    """
+    Scrape YouTube search results for a trailer video ID.
+    Targets 'videoRenderer' — YouTube's data structure for organic search
+    results only. Ads and promoted content use different renderer names
+    ('promotedSparklesWebRenderer', 'searchPyvRenderer') so they are
+    naturally skipped, giving the actual first search result.
+    """
     import re
-    query = f"{title} {year or ''} official trailer"
+    year_str = f"({year})" if year else ""
+    query = f"{title} {year_str} official trailer"
     try:
         r = await client.get(
             "https://www.youtube.com/results",
@@ -724,11 +731,14 @@ async def _fetch_youtube_trailer(title: str, year: Optional[int], client: httpx.
             headers={"Accept-Language": "en-US,en;q=0.9"},
             timeout=8.0,
         )
-        # YouTube embeds all video IDs in the page as "videoId":"XXXXXXXXXXX"
-        # The first match is the top search result
-        ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', r.text)
-        if ids:
-            return ids[0]
+        # "videoRenderer":{"videoId":"..."} is exclusively used for
+        # organic video search results — first match = top result
+        match = re.search(
+            r'"videoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})"',
+            r.text,
+        )
+        if match:
+            return match.group(1)
     except Exception:
         pass
     return None
