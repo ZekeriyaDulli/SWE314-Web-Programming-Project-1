@@ -28,8 +28,8 @@ Free-tier stack: **Railway** (MySQL + FastAPI backend) · **Vercel** (React fron
 |---|---|
 | `DATABASE_URL` | (paste from MySQL service, step 1) |
 | `SECRET_KEY` | any long random string |
-| `OMDB_API_KEY` | `c9d9cd73` |
-| `ADMIN_USER_ID` | `8` |
+| `OMDB_API_KEY` | `` |
+| `ADMIN_USER_ID` | `` |
 | `FRONTEND_URL` | your Vercel URL (add after step 3, e.g. `https://movie-archive.vercel.app`) |
 
 5. Deploy. After a successful deploy, copy the **public domain** Railway assigned (e.g. `https://movie-archive-api.up.railway.app`).
