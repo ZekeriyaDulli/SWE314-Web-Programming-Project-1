@@ -714,25 +714,21 @@ async def fetch_omdb_movie(imdb_id: str, client: httpx.AsyncClient) -> dict:
 
 
 async def _fetch_youtube_trailer(title: str, year: Optional[int], client: httpx.AsyncClient) -> Optional[str]:
-    """Search YouTube Data API v3 for a trailer and return the video ID."""
-    if not settings.youtube_api_key:
-        return None
+    """Scrape YouTube search results for a trailer video ID — no API key or quota needed."""
+    import re
+    query = f"{title} {year or ''} official trailer"
     try:
-        query = f"{title} {year or ''} official trailer"
         r = await client.get(
-            "https://www.googleapis.com/youtube/v3/search",
-            params={
-                "part": "id",
-                "q": query,
-                "type": "video",
-                "maxResults": 1,
-                "key": settings.youtube_api_key,
-            },
-            timeout=5.0,
+            "https://www.youtube.com/results",
+            params={"search_query": query},
+            headers={"Accept-Language": "en-US,en;q=0.9"},
+            timeout=8.0,
         )
-        items = r.json().get("items", [])
-        if items:
-            return items[0]["id"]["videoId"]
+        # YouTube embeds all video IDs in the page as "videoId":"XXXXXXXXXXX"
+        # The first match is the top search result
+        ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', r.text)
+        if ids:
+            return ids[0]
     except Exception:
         pass
     return None
