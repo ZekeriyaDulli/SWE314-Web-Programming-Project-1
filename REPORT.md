@@ -111,7 +111,7 @@ movie_archive/
 │           ├── AdminUploadPage.jsx # CSV bulk upload
 │           └── AdminSyncPage.jsx   # Real-time OMDb sync with progress bar
 │
-├── screenshots/                    # 37 Playwright-captured screenshots
+├── screenshots/                    # 39 Playwright-captured screenshots
 ├── responsibilities/               # Team member responsibility breakdowns
 └── REPORT.md                       # This file
 ```
