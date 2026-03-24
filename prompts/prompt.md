@@ -388,16 +388,16 @@ Thin routes: every route body must be 3–5 lines — inject the session, call t
    ├── db/
    │   ├── 1- Movie_Archive_DB.sql
    │   ├── 2- Stored_Procedures.sql
-   │   ├── 3- Sample_Data.sql
-   │   ├── 4- Schema_Additions.sql
-   │   └── 5- Trailer_Feature.sql
+   │   └── 3- Sample_Data.sql
+   │   
+   │   
    ├── screenshots/
    ├── responsibilities/
-   │   ├── backend_student.md
-   │   ├── goktu.md
-   │   ├── matin.md
-   │   ├── kutay.md
-   │   └── mohammed_hamad.md
+   │   ├── 2309115377.md
+   │   ├── 2309111082.md
+   │   ├── 2309115105.md
+   │   ├── 220911757.md
+   │   └── 2509111065.md
    ├── REPORT.md
    └── README.md
    ```
