@@ -38,7 +38,42 @@ A full-stack web application for discovering, tracking, and rating movies and TV
 ### Admin Only
 - Bulk-upload IMDb IDs via CSV
 - OMDb background sync with real-time progress bar (polled every 2 s)
+- Sync Missing Only mode — only processes titles with incomplete metadata
 - Create tags and apply them to titles
+
+---
+
+## Screenshots
+
+### Browsing & Discovery
+
+| Browse Catalogue | Filters Applied | Logged-in View |
+|---|---|---|
+| ![Browse](screenshots/01_home_browse.png) | ![Filters](screenshots/03_home_filters.png) | ![Logged in](screenshots/02_home_logged_in.png) |
+
+### Show Detail & Trailer
+
+| Movie Detail | TV Series Detail (Seasons) | Watch Trailer Button | Trailer Modal |
+|---|---|---|---|
+| ![Movie detail](screenshots/16_show_detail.png) | ![TV detail](screenshots/17_show_tv-show_detail.png) | ![Trailer button](screenshots/38_show_detail_trailer_button.png) | ![Trailer modal](screenshots/39_trailer_modal.png) |
+
+### Authentication
+
+| Login | Register | User Menu | Admin Menu |
+|---|---|---|---|
+| ![Login](screenshots/04_login_page.png) | ![Register](screenshots/07_register_page.png) | ![User dropdown](screenshots/08_navbar_user_dropdown.png) | ![Admin dropdown](screenshots/09_navbar_admin_dropdown.png) |
+
+### Watchlists & History
+
+| My Watchlists | Watchlist Detail | Watch History |
+|---|---|---|
+| ![Watchlists](screenshots/21_watchlists_page.png) | ![Watchlist detail](screenshots/22_watchlist_detail.png) | ![History](screenshots/30_watch_history.png) |
+
+### Admin Tools
+
+| CSV Upload | Upload Result | Sync Running | Sync Complete |
+|---|---|---|---|
+| ![Upload](screenshots/24_admin_upload_page.png) | ![Upload result](screenshots/25_admin_upload_result.png) | ![Sync running](screenshots/27_admin_sync_running.png) | ![Sync complete](screenshots/28_admin_sync_complete.png) |
 
 ---
 
