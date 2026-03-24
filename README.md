@@ -66,8 +66,8 @@ movie_archive/
 │                           # AdminUploadPage, AdminSyncPage
 ├── db/
 │   ├── 1- Movie_Archive_DB.sql   # All CREATE TABLE + migrations
-│   ├── 2- Procedures.sql         # Stored procedures
-│   └── 3- Insertions.sql         # Seed data
+│   ├── 2- Stored_Procedures.sql  # Stored procedures
+│   └── 3- Sample_Data.sql        # Seed data
 ├── responsibilities/       # Per-student responsibility files
 └── REPORT.md               # Full project report
 ```
@@ -90,15 +90,15 @@ Run the SQL files **in order** against a running MySQL instance:
 
 ```bash
 mysql -u root -p < "db/1- Movie_Archive_DB.sql"
-mysql -u root -p movie_archive < "db/2- Procedures.sql"
-mysql -u root -p movie_archive < "db/3- Insertions.sql"
+mysql -u root -p movie_archive < "db/2- Stored_Procedures.sql"
+mysql -u root -p movie_archive < "db/3- Sample_Data.sql"
 ```
 
 | File | Contents |
 |------|----------|
 | `1- Movie_Archive_DB.sql` | Creates the database and all 15 tables with constraints and indexes |
-| `2- Procedures.sql` | Stored procedures: `sp_rate_show`, `sp_mark_as_watched`, `sp_create_watchlist`, etc. |
-| `3- Insertions.sql` | Seed data: 8 users, 18 movies, genres, cast, watchlists, ratings, and tags |
+| `2- Stored_Procedures.sql` | Stored procedures: `sp_rate_show`, `sp_mark_as_watched`, `sp_create_watchlist`, etc. |
+| `3- Sample_Data.sql` | Seed data: 8 users, 18 movies, genres, cast, watchlists, ratings, and tags |
 
 ### Step 2 — Backend
 
