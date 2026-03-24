@@ -412,7 +412,11 @@ app.include_router(external.router)
 
 ### Relational Database Design
 
-The schema has **15 tables** in a normalised relational model with explicit primary keys, foreign keys, composite keys, unique constraints, and cascade rules:
+The full ER diagram is included in the repository (`db/ER-Diagram.mwb` — MySQL Workbench source, `db/ER-Diagram.png` — exported image):
+
+![ER Diagram](db/ER-Diagram.png)
+
+The schema has **16 tables** in a normalised relational model with explicit primary keys, foreign keys, composite keys, unique constraints, and cascade rules:
 
 ```
 users ──< watchlists ──< watchlist_items >── shows
