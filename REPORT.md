@@ -81,8 +81,8 @@ movie_archive/
 │
 ├── db/
 │   ├── 1- Movie_Archive_DB.sql     # Schema: all CREATE TABLE + ALTER TABLE migrations
-│   ├── 2- Procedures.sql           # Stored procedures and views
-│   └── 3- Insertions.sql           # Seed data (users, shows, genres, cast, watchlists)
+│   ├── 2- Stored_Procedures.sql    # Stored procedures and views
+│   └── 3- Sample_Data.sql          # Seed data (users, shows, genres, cast, watchlists)
 │
 ├── frontend/                       # React 19 + Vite SPA
 │   ├── vite.config.js              # Vite config with dev-proxy to backend
@@ -134,8 +134,8 @@ Run the three SQL files **in order** against a running MySQL instance:
 
 ```bash
 mysql -u root -p < "db/1- Movie_Archive_DB.sql"
-mysql -u root -p movie_archive < "db/2- Procedures.sql"
-mysql -u root -p movie_archive < "db/3- Insertions.sql"
+mysql -u root -p movie_archive < "db/2- Stored_Procedures.sql"
+mysql -u root -p movie_archive < "db/3- Sample_Data.sql"
 ```
 
 **What each file does:**
@@ -143,8 +143,8 @@ mysql -u root -p movie_archive < "db/3- Insertions.sql"
 | File | Contents |
 |------|----------|
 | `1- Movie_Archive_DB.sql` | Creates the `movie_archive` database and all **15 tables**: `users`, `shows`, `genres`, `show_genres`, `directors`, `show_directors`, `actors`, `show_actors`, `watchlists`, `watchlist_items`, `user_ratings`, `watch_history`, `tags`, `show_tags`, `seasons`, `episodes`. Also includes `ALTER TABLE` migrations that add `show_type` and `total_seasons` columns to `shows`, the `UNIQUE KEY uq_watch_history_user_show` deduplication constraint on `watch_history`, and performance indexes. |
-| `2- Procedures.sql` | Drops and recreates all stored procedures: `sp_rate_show`, `sp_mark_as_watched`, `sp_create_watchlist`, `sp_delete_watchlist`, `sp_add_to_watchlist`, `sp_remove_from_watchlist`, `sp_insert_show_if_not_exists`. |
-| `3- Insertions.sql` | Seeds the database with 8 users (including one admin), 18 movies, 8 genres, 13 directors, 44 actors, all join-table mappings, 12 watchlists with items, user ratings, watch history, and 8 tags. |
+| `2- Stored_Procedures.sql` | Drops and recreates all stored procedures: `sp_rate_show`, `sp_mark_as_watched`, `sp_create_watchlist`, `sp_delete_watchlist`, `sp_add_to_watchlist`, `sp_remove_from_watchlist`, `sp_insert_show_if_not_exists`. |
+| `3- Sample_Data.sql` | Seeds the database with 8 users (including one admin), 18 movies, 8 genres, 13 directors, 44 actors, all join-table mappings, 12 watchlists with items, user ratings, watch history, and 8 tags. |
 
 ### Step 2 — Backend
 
@@ -469,7 +469,7 @@ CREATE TABLE show_tags (
 **Stored Procedures** encapsulate write business logic in the database layer:
 
 ```sql
--- db/2- Procedures.sql
+-- db/2- Stored_Procedures.sql
 CREATE PROCEDURE sp_rate_show(
     IN p_user_id INT, IN p_show_id INT, IN p_rating INT, IN p_review_text TEXT
 )
