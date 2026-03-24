@@ -24,7 +24,7 @@ Build a full-stack Movie Archive web application called "Movie Archive" from scr
    - `tags` — `tag_id INT PK AUTO_INCREMENT`, `name VARCHAR(50) UNIQUE NOT NULL`
    - `show_tags` — composite PK `(show_id, tag_id)` *(many-to-many)*
 
-3. Write at minimum 27 stored procedures covering all major operations. Each procedure must be called by the service layer via `sqlalchemy.text("CALL sp_name(:p)")`. Required procedures include:
+3. Write 7 stored procedures covering all write-path business logic. Each procedure must be called by the service layer via `sqlalchemy.text("CALL sp_name(:p)")`. Read operations use raw `sqlalchemy.text()` SELECT queries directly. Required procedures:
    - `sp_get_all_shows(p_genre_id, p_min_year, p_max_year, p_min_rating, p_search)` — filtered show list with platform average rating and rating count via LEFT JOINs; all filter params nullable
    - `sp_get_show_detail(p_show_id, p_user_id)` — single show row including `is_watched` flag derived from `watch_history`
    - `sp_add_show(p_imdb_id, OUT p_show_id)` — INSERT IGNORE on `imdb_id`; return new or existing `show_id` via OUT param
