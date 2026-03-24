@@ -29,6 +29,8 @@ ALTER TABLE shows
     ADD COLUMN show_type VARCHAR(10) NOT NULL DEFAULT 'movie' AFTER imdb_id,
     ADD COLUMN total_seasons INT DEFAULT NULL AFTER duration_minutes;
 
+ALTER TABLE shows
+    ADD COLUMN trailer_url VARCHAR(20) DEFAULT NULL;
 
 create table genres (
 	genre_id int auto_increment primary key,
