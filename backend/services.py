@@ -172,7 +172,7 @@ def get_shows(filters: FilterParams, session: Session) -> list[dict]:
         {where}
         GROUP BY s.show_id
         ORDER BY s.release_year DESC, s.imdb_rating DESC
-        LIMIT 500
+        LIMIT 100
     """
     result = session.execute(text(sql), params)
     return [dict(r) for r in result.mappings().all()]
