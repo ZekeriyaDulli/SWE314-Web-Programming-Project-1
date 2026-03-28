@@ -56,6 +56,7 @@ export default function Navbar() {
                   <ul className="dropdown-menu dropdown-menu-end">
                     <li><Link className="dropdown-item" to="/watchlists">My Watchlists</Link></li>
                     <li><Link className="dropdown-item" to="/history">Watch History</Link></li>
+                    <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
                     <li><hr className="dropdown-divider g-divider" /></li>
                     <li>
                       <button className="dropdown-item" style={{ color: '#f87171' }} onClick={handleLogout}>
@@ -79,7 +80,7 @@ export default function Navbar() {
                       Admin
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end">
-                      <li><Link className="dropdown-item" to="/admin/upload">Upload CSV</Link></li>
+                      <li><Link className="dropdown-item" to="/admin/upload">Add Movies</Link></li>
                       <li><Link className="dropdown-item" to="/admin/sync">Sync OMDb</Link></li>
                     </ul>
                   </div>

@@ -25,6 +25,18 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ChangePassword(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=6, max_length=128)
+    confirm_new_password: str
+
+    @model_validator(mode="after")
+    def passwords_match(self):
+        if self.new_password != self.confirm_new_password:
+            raise ValueError("New passwords do not match.")
+        return self
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: int
@@ -71,6 +83,7 @@ class ShowResponse(BaseModel):
     added_at: Optional[datetime] = None
     platform_avg: Optional[float] = None
     rating_count: Optional[int] = None
+    is_watched: bool = False
 
 
 class GenreResponse(BaseModel):

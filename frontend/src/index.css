@@ -1,0 +1,404 @@
+/* ============================================================
+   MOVIE ARCHIVE — GLASSMORPHISM DESIGN SYSTEM
+   Hard overrides. No merging. No Bootstrap conflicts.
+   ============================================================ */
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Body — THE background that makes glass work ────────────── */
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #fff;
+
+  /* Rich multi-stop gradient — ESSENTIAL for glass effect */
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(129, 38, 46, 0.65) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 80%, rgba(90, 20, 35, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(28, 22, 42, 0.75) 0%, transparent 80%),
+    linear-gradient(135deg, #1C162A 0%, #150e20 30%, #1a0d16 60%, #1C162A 100%);
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+#root {
+  min-height: 100vh;
+  background: transparent !important;
+  position: relative;
+}
+
+/* ── Nuclear Bootstrap background overrides ─────────────────── */
+/* Bootstrap sets opaque backgrounds on these — we kill them all */
+.container, .container-fluid,
+.container-sm, .container-md, .container-lg, .container-xl {
+  background: transparent !important;
+}
+
+/* Bootstrap .card overrides */
+.card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+.card-body { background: transparent !important; }
+
+/* Bootstrap form inputs */
+.form-control,
+.form-select,
+.form-control:focus,
+.form-select:focus {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(201, 68, 85, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(201, 68, 85, 0.15) !important;
+}
+.form-control::placeholder { color: rgba(255,255,255,0.35) !important; }
+.form-select option { background: #1C162A; color: #fff; }
+
+/* Input group button */
+.input-group > .btn {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.6) !important;
+}
+.input-group > .btn:hover { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
+
+/* Bootstrap navbar */
+.navbar { background: transparent !important; }
+
+/* Bootstrap dropdown */
+.dropdown-menu {
+  background: rgba(20, 14, 26, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 14px !important;
+}
+.dropdown-item { color: rgba(255,255,255,0.65) !important; border-radius: 8px; margin: 2px 4px; width: calc(100% - 8px); }
+.dropdown-item:hover { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
+.dropdown-divider { border-color: rgba(255,255,255,0.08) !important; }
+
+/* Bootstrap modal */
+.modal-content {
+  background: rgba(20, 14, 26, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 20px !important;
+  color: #fff !important;
+}
+.modal-header, .modal-footer { border-color: rgba(255,255,255,0.08) !important; }
+
+/* Bootstrap accordion */
+.accordion-item {
+  background: transparent !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+.accordion-button {
+  background: rgba(255,255,255,0.04) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.accordion-button:not(.collapsed) {
+  background: rgba(129, 38, 46, 0.15) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.accordion-button::after { filter: brightness(0) invert(1) opacity(0.6); }
+.accordion-collapse { background: rgba(0,0,0,0.2) !important; }
+
+/* Bootstrap table */
+.table {
+  --bs-table-bg: transparent !important;
+  --bs-table-color: rgba(255,255,255,0.8) !important;
+  --bs-table-border-color: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+.table th { color: rgba(255,255,255,0.45) !important; font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase; }
+.table tbody tr:hover { background: rgba(255,255,255,0.03) !important; }
+
+/* Bootstrap badge */
+.badge.bg-secondary { background: rgba(255,255,255,0.1) !important; }
+
+/* Bootstrap progress */
+.progress { background: rgba(255,255,255,0.06) !important; border-radius: 4px; }
+
+/* Bootstrap alert - keep functional */
+.alert { border-radius: 10px !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(28,22,42,0.8); border-radius: 6px; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c94455 0%, #81262E 100%);
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(201,68,85,0.4);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e07080 0%, #c94455 100%);
+  box-shadow: 0 0 12px rgba(201,68,85,0.7);
+}
+html { scrollbar-width: thin; scrollbar-color: #c94455 rgba(28,22,42,0.8); }
+
+/* ── Glass utility ───────────────────────────────────────────── */
+/* Use these as inline styles on your elements. They are here
+   as reference and for any custom-class usage.               */
+:root {
+  --glass:        rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-blur:   blur(16px) saturate(180%);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --accent:       #c94455;
+  --accent-2:     #e07080;
+  --danger:       #ff4b5c;
+  --gold:         #f59e0b;
+  --text-muted:   rgba(255,255,255,0.55);
+  --text-dim:     rgba(255,255,255,0.3);
+}
+
+/* Shared glass panel class */
+.g-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.g-panel-sm {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+/* Navbar */
+.g-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+  background: rgba(18, 10, 16, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.35);
+}
+
+/* Brand gradient text */
+.g-brand {
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #e06070 0%, #c94455 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.3px;
+  text-decoration: none !important;
+}
+
+/* Accent button */
+.g-btn-accent {
+  background: linear-gradient(135deg, #c94455, #81262E) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s !important;
+}
+.g-btn-accent:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(201,68,85,0.45) !important;
+  opacity: 0.95 !important;
+  color: #fff !important;
+}
+
+/* Secondary/ghost button */
+.g-btn-ghost {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.7) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 10px !important;
+  transition: background 0.2s, color 0.2s, border-color 0.2s !important;
+}
+.g-btn-ghost:hover {
+  background: rgba(255,255,255,0.11) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+
+/* Danger accent */
+.g-btn-danger {
+  background: rgba(255,75,92,0.12) !important;
+  color: #ff4b5c !important;
+  border: 1px solid rgba(255,75,92,0.35) !important;
+  border-radius: 10px !important;
+}
+.g-btn-danger:hover {
+  background: rgba(255,75,92,0.22) !important;
+  color: #ff4b5c !important;
+}
+
+/* Movie card */
+.g-movie-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  height: 100%;
+  transition:
+    transform 0.28s cubic-bezier(.25,.46,.45,.94),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+  cursor: pointer;
+}
+.g-movie-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  border-color: rgba(201,68,85,0.5);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.55),
+    0 0 40px rgba(201,68,85,0.2);
+}
+.g-movie-card .g-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(20,10,18,0.92) 0%,
+    rgba(20,10,18,0.4) 45%,
+    transparent 100%);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease;
+}
+.g-movie-card:hover .g-card-overlay { opacity: 1; }
+
+/* Form label */
+.g-label {
+  display: block;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+/* Badges */
+.g-badge-imdb {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+.g-badge-platform {
+  display: inline-block;
+  background: rgba(201,68,85,0.15);
+  color: #e07080;
+  border: 1px solid rgba(201,68,85,0.4);
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.g-badge-series {
+  display: inline-block;
+  background: rgba(129,38,46,0.88);
+  color: #fff;
+  border: 1px solid rgba(201,68,85,0.6);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.g-badge-movie {
+  display: inline-block;
+  background: rgba(20,14,30,0.85);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.g-badge-genre {
+  display: inline-block;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+.g-badge-tag {
+  display: inline-block;
+  background: rgba(201,68,85,0.12);
+  color: #e07080;
+  border: 1px solid rgba(201,68,85,0.3);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.g-badge-watched {
+  display: inline-block;
+  background: rgba(34,197,94,0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.4);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+/* Text helpers */
+.g-muted  { color: rgba(255,255,255,0.55) !important; }
+.g-dim    { color: rgba(255,255,255,0.3)  !important; }
+.g-divider { border-color: rgba(255,255,255,0.07) !important; }
+
+/* Page wrapper — MUST be transparent */
+.g-page {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+  background: transparent !important;
+}
