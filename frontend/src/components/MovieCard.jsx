@@ -80,11 +80,15 @@ export default function MovieCard({ show }) {
             </div>
           )}
 
-          {/* Type badge */}
-          {show.show_type === 'series'
-            ? <span className="g-badge-series" style={{ position: 'absolute', top: '8px', left: '8px' }}>Series</span>
-            : <span className="g-badge-movie"  style={{ position: 'absolute', top: '8px', left: '8px' }}>Movie</span>
-          }
+          {/* Top badges row: type + IMDb + watched */}
+          <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 'calc(100% - 16px)' }}>
+            {show.show_type === 'series'
+              ? <span className="g-badge-series">Series</span>
+              : <span className="g-badge-movie">Movie</span>
+            }
+            {show.imdb_rating && <span className="g-badge-imdb">IMDb: {show.imdb_rating}</span>}
+            {show.is_watched && <span className="g-badge-watched">✓ Watched</span>}
+          </div>
 
           {/* Default hover overlay — buttons at bottom */}
           <div style={{
@@ -187,10 +191,11 @@ export default function MovieCard({ show }) {
           <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', display: 'block', marginBottom: '6px' }}>
             {show.release_year || '—'}
           </span>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            {show.imdb_rating && <span className="g-badge-imdb">IMDb {show.imdb_rating}</span>}
-            {show.platform_avg && <span className="g-badge-platform">★ {Number(show.platform_avg).toFixed(1)}</span>}
-          </div>
+          {show.platform_avg && (
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              <span className="g-badge-platform">★ {Number(show.platform_avg).toFixed(1)}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

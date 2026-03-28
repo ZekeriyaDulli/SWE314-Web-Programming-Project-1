@@ -10,6 +10,8 @@ import WatchlistDetailPage from './pages/WatchlistDetailPage'
 import HistoryPage from './pages/HistoryPage'
 import AdminUploadPage from './pages/AdminUploadPage'
 import AdminSyncPage from './pages/AdminSyncPage'
+import DownloadsPage from './pages/DownloadsPage'
+import ChangePasswordPage from './pages/ChangePasswordPage'
 
 /* Fixed ambient orbs — these sit behind ALL content and give
    the frosted glass something colourful to blur through.      */
@@ -65,6 +67,8 @@ export default function App() {
           <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route path="/watchlists/:id" element={<WatchlistDetailPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/downloads" element={<DownloadsPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/admin/sync" element={<AdminSyncPage />} />
         </Routes>

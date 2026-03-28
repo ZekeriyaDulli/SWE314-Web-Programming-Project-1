@@ -310,14 +310,17 @@ html { scrollbar-width: thin; scrollbar-color: #c94455 rgba(28,22,42,0.8); }
 
 /* Badges */
 .g-badge-imdb {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #000;
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 6px;
   letter-spacing: 0.3px;
+  line-height: 1;
 }
 .g-badge-platform {
   display: inline-block;
