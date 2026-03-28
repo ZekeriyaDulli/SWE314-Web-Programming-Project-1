@@ -1050,9 +1050,14 @@ def delete_show(show_id: int, session: Session) -> None:
     session.execute(text("DELETE FROM seasons WHERE show_id = :sid"), {"sid": show_id})
 
     # 4. Delete junction table rows
+    # Query existing tables once so we skip any that haven't been created yet
+    existing = {
+        r[0] for r in session.execute(text("SHOW TABLES")).fetchall()
+    }
     for tbl in ("show_genres", "show_directors", "show_actors", "show_tags",
                 "watchlist_items", "user_ratings", "watch_history", "collection_shows"):
-        session.execute(text(f"DELETE FROM {tbl} WHERE show_id = :sid"), {"sid": show_id})
+        if tbl in existing:
+            session.execute(text(f"DELETE FROM {tbl} WHERE show_id = :sid"), {"sid": show_id})
 
     # 5. Delete the show itself
     result = session.execute(text("DELETE FROM shows WHERE show_id = :sid"), {"sid": show_id})
