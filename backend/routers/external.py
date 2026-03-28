@@ -6,7 +6,7 @@ import httpx
 from config import settings
 from database import get_session
 from dependencies import require_admin
-from schemas import SyncStatusResponse
+from schemas import ShowCreate, SyncStatusResponse
 import services
 
 # Public poster proxy — no auth required
@@ -74,6 +74,25 @@ async def start_sync_missing(
 @router.get("/sync/status", response_model=SyncStatusResponse)
 def sync_status(_=Depends(require_admin)):
     return services.get_sync_status()
+
+
+@router.delete("/shows/{show_id}")
+def delete_show(
+    show_id: int,
+    session: Session = Depends(get_session),
+    _=Depends(require_admin),
+):
+    services.delete_show(show_id, session)
+    return {"detail": "Show deleted."}
+
+
+@router.post("/add-show")
+def add_single_show(
+    body: ShowCreate,
+    session: Session = Depends(get_session),
+    _=Depends(require_admin),
+):
+    return services.add_single_show(body.imdb_id, session)
 
 
 @router.post("/upload-csv")

@@ -18,3 +18,9 @@ def get_history(session: Session = Depends(get_session), current_user: dict = De
 def mark_watched(show_id: int, session: Session = Depends(get_session), current_user: dict = Depends(get_current_user)):
     services.mark_watched(current_user["user_id"], show_id, session)
     return {"detail": f"Show {show_id} marked as watched."}
+
+
+@router.delete("/{show_id}", status_code=200)
+def unmark_watched(show_id: int, session: Session = Depends(get_session), current_user: dict = Depends(get_current_user)):
+    services.unmark_watched(current_user["user_id"], show_id, session)
+    return {"detail": f"Show {show_id} removed from watch history."}

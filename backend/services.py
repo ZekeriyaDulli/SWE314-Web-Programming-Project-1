@@ -146,7 +146,7 @@ _SHOWS_SELECT = """
 """
 
 
-def get_shows(filters: FilterParams, session: Session) -> list[dict]:
+def get_shows(filters: FilterParams, session: Session, user_id: Optional[int] = None) -> list[dict]:
     conditions = []
     params: dict = {}
 
@@ -167,15 +167,34 @@ def get_shows(filters: FilterParams, session: Session) -> list[dict]:
         params["search"] = f"%{filters.search}%"
 
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    params["uid"] = user_id or 0
     sql = f"""
-        {_SHOWS_SELECT}
+        SELECT
+            s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
+            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            GROUP_CONCAT(DISTINCT a.full_name SEPARATOR ', ') AS actors,
+            GROUP_CONCAT(DISTINCT d.full_name SEPARATOR ', ') AS directors,
+            ROUND(AVG(ur.rating), 2) AS platform_avg,
+            COUNT(DISTINCT ur.user_id) AS rating_count,
+            MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched
+        FROM shows s
+        LEFT JOIN user_ratings ur ON ur.show_id = s.show_id
+        LEFT JOIN show_genres sg ON sg.show_id = s.show_id
+        LEFT JOIN show_actors sa ON sa.show_id = s.show_id
+        LEFT JOIN actors a ON a.actor_id = sa.actor_id
+        LEFT JOIN show_directors sd ON sd.show_id = s.show_id
+        LEFT JOIN directors d ON d.director_id = sd.director_id
+        LEFT JOIN watch_history wh ON wh.show_id = s.show_id AND wh.user_id = :uid
         {where}
         GROUP BY s.show_id
         ORDER BY s.release_year DESC, s.imdb_rating DESC
         LIMIT 100
     """
     result = session.execute(text(sql), params)
-    return [dict(r) for r in result.mappings().all()]
+    rows = [dict(r) for r in result.mappings().all()]
+    for row in rows:
+        row["is_watched"] = bool(row.get("is_watched", 0))
+    return rows
 
 
 def get_show_detail(show_id: int, user_id: Optional[int], session: Session) -> dict:
@@ -332,6 +351,23 @@ def mark_watched(user_id: int, show_id: int, session: Session) -> None:
     # sp_mark_as_watched is INSERT IGNORE — no result set, safe
     session.execute(
         text("CALL sp_mark_as_watched(:uid, :sid)"), {"uid": user_id, "sid": show_id}
+    )
+    session.commit()
+
+
+def unmark_watched(user_id: int, show_id: int, session: Session) -> None:
+    has_rating = session.execute(
+        text("SELECT rating_id FROM user_ratings WHERE user_id = :uid AND show_id = :sid"),
+        {"uid": user_id, "sid": show_id},
+    ).fetchone()
+    if has_rating:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot remove from watch history while a rating exists. Delete your rating first.",
+        )
+    session.execute(
+        text("DELETE FROM watch_history WHERE user_id = :uid AND show_id = :sid"),
+        {"uid": user_id, "sid": show_id},
     )
     session.commit()
 
@@ -996,6 +1032,68 @@ def _apply_omdb_data(show: dict, api_data: dict, session: Session) -> None:
 
 
 # ── CSV Upload ────────────────────────────────────────────────────────────────
+
+def delete_show(show_id: int, session: Session) -> None:
+    """Delete a show and all related data (episodes, seasons, junction tables)."""
+    # 1. Get season IDs for this show
+    season_rows = session.execute(
+        text("SELECT season_id FROM seasons WHERE show_id = :sid"), {"sid": show_id}
+    ).fetchall()
+    season_ids = [r[0] for r in season_rows]
+
+    # 2. Delete episodes (FK → seasons)
+    if season_ids:
+        placeholders = ",".join(str(sid) for sid in season_ids)
+        session.execute(text(f"DELETE FROM episodes WHERE season_id IN ({placeholders})"))
+
+    # 3. Delete seasons
+    session.execute(text("DELETE FROM seasons WHERE show_id = :sid"), {"sid": show_id})
+
+    # 4. Delete junction table rows
+    for tbl in ("show_genres", "show_directors", "show_actors", "show_tags",
+                "watchlist_items", "user_ratings", "watch_history", "collection_shows"):
+        session.execute(text(f"DELETE FROM {tbl} WHERE show_id = :sid"), {"sid": show_id})
+
+    # 5. Delete the show itself
+    result = session.execute(text("DELETE FROM shows WHERE show_id = :sid"), {"sid": show_id})
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Show not found.")
+    session.commit()
+
+
+def add_single_show(imdb_id: str, session: Session) -> dict:
+    """Add a single show by IMDb ID using the same stored procedure as CSV upload."""
+    try:
+        session.execute(
+            text("CALL sp_insert_show_if_not_exists(:imdb_id, @was_inserted)"),
+            {"imdb_id": imdb_id},
+        )
+        was_inserted = session.execute(text("SELECT @was_inserted")).fetchone()[0]
+        session.commit()
+        if was_inserted == 1:
+            return {"detail": f"Show {imdb_id} added successfully.", "inserted": True}
+        return {"detail": f"Show {imdb_id} already exists.", "inserted": False}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to add show: {e}")
+
+
+def change_password(user_id: int, current_password: str, new_password: str, session: Session) -> None:
+    row = session.execute(
+        text("SELECT password_hash FROM users WHERE user_id = :uid"),
+        {"uid": user_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if not _verify_password(current_password, row[0]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+    new_hash = _hash_password(new_password)
+    session.execute(
+        text("UPDATE users SET password_hash = :h WHERE user_id = :uid"),
+        {"h": new_hash, "uid": user_id},
+    )
+    session.commit()
+
 
 def process_csv_upload(file_bytes: bytes, session: Session) -> dict:
     import csv

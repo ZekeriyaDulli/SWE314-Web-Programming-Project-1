@@ -19,9 +19,11 @@ def list_shows(
     min_rating: Optional[Decimal] = Query(None),
     search: Optional[str] = Query(None, max_length=200),
     session: Session = Depends(get_session),
+    current_user: Optional[dict] = Depends(get_optional_user),
 ):
+    user_id = current_user["user_id"] if current_user else None
     filters = FilterParams(genre_id=genre_id, min_year=min_year, max_year=max_year, min_rating=min_rating, search=search)
-    return services.get_shows(filters, session)
+    return services.get_shows(filters, session, user_id)
 
 
 @router.get("/genres", response_model=list[GenreResponse])

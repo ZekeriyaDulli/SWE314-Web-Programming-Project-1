@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     admin_user_id: int = 1
 
     # Frontend origin for CORS (set FRONTEND_URL in Railway env vars)
-    frontend_url: str = "http://localhost:5173"
+    frontend_url: str = "https://swe-314-web-programming-project-1.vercel.app/"  
 
     class Config:
         env_file = ".env"
