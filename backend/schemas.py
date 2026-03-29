@@ -77,6 +77,7 @@ class ShowResponse(BaseModel):
     duration_minutes: Optional[int] = None
     total_seasons: Optional[int] = None
     imdb_rating: Optional[Decimal] = None
+    imdb_votes: Optional[int] = None
     plot: Optional[str] = None
     poster_url: Optional[str] = None
     trailer_url: Optional[str] = None

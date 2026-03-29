@@ -221,6 +221,7 @@ export default function ShowDetailPage() {
                 : <span className="g-badge-movie">Movie</span>
               }
               {show.imdb_rating && <span className="g-badge-imdb">IMDb: {show.imdb_rating}</span>}
+              {show.imdb_votes != null && <span className="g-badge-imdb" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>{Number(show.imdb_votes).toLocaleString()} votes</span>}
               {show.platform_avg && <span className="g-badge-platform">★ {Number(show.platform_avg).toFixed(1)} platform</span>}
               {show.release_year && <span className="g-muted">{show.release_year} | </span>}
               {show.show_type === 'series' && show.total_seasons
