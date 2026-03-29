@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import MovieCard from '../components/MovieCard'
+import PosterImage from '../components/PosterImage'
 
 const PILL = (active) => ({
   padding: '5px 18px',
@@ -183,9 +184,8 @@ export default function HomePage() {
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    {s.poster_url ? (
-                      <img src={s.poster_url} alt="" style={{ width: 50, height: 75, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
-                    ) : (
+                    <PosterImage posterUrl={s.poster_url} alt={s.title} style={{ width: 50, height: 75, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                    {!s.poster_url && (
                       <div style={{ width: 50, height: 75, borderRadius: 8, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
                     )}
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
