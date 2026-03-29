@@ -25,6 +25,7 @@ class Show(SQLModel, table=True):
     duration_minutes: Optional[int] = Field(default=0)
     total_seasons: Optional[int] = Field(default=None)
     imdb_rating: Optional[Decimal] = Field(default=Decimal("0.0"))
+    imdb_votes: Optional[int] = Field(default=None)
     plot: Optional[str] = None
     poster_url: Optional[str] = Field(default=None, max_length=500)
     added_at: Optional[datetime] = None
