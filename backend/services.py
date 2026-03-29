@@ -163,8 +163,11 @@ def get_shows(filters: FilterParams, session: Session, user_id: Optional[int] = 
         conditions.append("s.imdb_rating >= :min_rating")
         params["min_rating"] = filters.min_rating
     if filters.search:
-        conditions.append("s.title LIKE :search or a.full_name LIKE :search or d.full_name LIKE :search")
+        conditions.append("(s.title LIKE :search OR a.full_name LIKE :search OR d.full_name LIKE :search)")
         params["search"] = f"%{filters.search}%"
+    if filters.show_type:
+        conditions.append("s.show_type = :show_type")
+        params["show_type"] = filters.show_type
 
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     params["uid"] = user_id or 0
@@ -195,6 +198,81 @@ def get_shows(filters: FilterParams, session: Session, user_id: Optional[int] = 
     for row in rows:
         row["is_watched"] = bool(row.get("is_watched", 0))
     return rows
+
+
+def get_trending(session: Session, user_id: Optional[int] = None) -> list[dict]:
+    """Trending = admin-tagged Trending (tag_id 9) first, then highest-rated from past 2 years.
+    Returns both movies and series so the frontend can toggle without reloading."""
+    params: dict = {"uid": user_id or 0, "cutoff_year": datetime.now().year - 2}
+    sql = """
+        SELECT
+            s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
+            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            ROUND(AVG(ur.rating), 2) AS platform_avg,
+            COUNT(DISTINCT ur.user_id) AS rating_count,
+            MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched,
+            MAX(CASE WHEN st.tag_id = 9 THEN 1 ELSE 0 END) AS is_trending_tag
+        FROM shows s
+        LEFT JOIN user_ratings ur ON ur.show_id = s.show_id
+        LEFT JOIN watch_history wh ON wh.show_id = s.show_id AND wh.user_id = :uid
+        LEFT JOIN show_tags st ON st.show_id = s.show_id
+        WHERE s.imdb_rating IS NOT NULL
+          AND (st.tag_id = 9 OR s.release_year >= :cutoff_year)
+        GROUP BY s.show_id
+        ORDER BY is_trending_tag DESC, s.imdb_rating DESC, s.release_year DESC
+    """
+    result = session.execute(text(sql), params)
+    rows = [dict(r) for r in result.mappings().all()]
+    movies = []
+    series = []
+    for row in rows:
+        row["is_watched"] = bool(row.get("is_watched", 0))
+        del row["is_trending_tag"]
+        if row["show_type"] == "movie" and len(movies) < 12:
+            movies.append(row)
+        elif row["show_type"] == "series" and len(series) < 12:
+            series.append(row)
+        if len(movies) >= 12 and len(series) >= 12:
+            break
+    return {"movies": movies, "series": series}
+
+
+def get_latest(show_type: str, session: Session, user_id: Optional[int] = None) -> list[dict]:
+    """Latest = most recently produced shows of the given type."""
+    params: dict = {"uid": user_id or 0, "show_type": show_type}
+    sql = """
+        SELECT
+            s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
+            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            ROUND(AVG(ur.rating), 2) AS platform_avg,
+            COUNT(DISTINCT ur.user_id) AS rating_count,
+            MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched
+        FROM shows s
+        LEFT JOIN user_ratings ur ON ur.show_id = s.show_id
+        LEFT JOIN watch_history wh ON wh.show_id = s.show_id AND wh.user_id = :uid
+        WHERE s.show_type = :show_type
+        GROUP BY s.show_id
+        ORDER BY s.release_year DESC, s.imdb_rating DESC
+        LIMIT 12
+    """
+    result = session.execute(text(sql), params)
+    rows = [dict(r) for r in result.mappings().all()]
+    for row in rows:
+        row["is_watched"] = bool(row.get("is_watched", 0))
+    return rows
+
+
+def get_search_suggestions(query: str, session: Session) -> list[dict]:
+    """Return up to 5 title matches for autocomplete."""
+    sql = """
+        SELECT s.show_id, s.title, s.show_type, s.release_year, s.poster_url, s.imdb_rating
+        FROM shows s
+        WHERE s.title LIKE :q
+        ORDER BY s.imdb_rating DESC
+        LIMIT 5
+    """
+    result = session.execute(text(sql), {"q": f"%{query}%"})
+    return [dict(r) for r in result.mappings().all()]
 
 
 def get_show_detail(show_id: int, user_id: Optional[int], session: Session) -> dict:

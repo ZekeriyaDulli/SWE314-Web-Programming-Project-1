@@ -396,6 +396,11 @@ html { scrollbar-width: thin; scrollbar-color: #c94455 rgba(28,22,42,0.8); }
 .g-dim    { color: rgba(255,255,255,0.3)  !important; }
 .g-divider { border-color: rgba(255,255,255,0.07) !important; }
 
+/* Hide native number spinners inside custom NumericInput */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
 /* Page wrapper — MUST be transparent */
 .g-page {
   min-height: 100vh;
