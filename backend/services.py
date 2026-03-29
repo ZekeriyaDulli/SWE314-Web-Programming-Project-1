@@ -892,24 +892,10 @@ async def _sync_tv_seasons(
             if data.get("Response") == "False":
                 break
             episodes_raw = data.get("Episodes", [])
-            # Upsert season row
-            session.execute(
-                text("""
-                    INSERT INTO seasons (show_id, season_number, episode_count)
-                    VALUES (:sid, :snum, :ecnt)
-                    ON DUPLICATE KEY UPDATE episode_count = :ecnt
-                """),
-                {"sid": show_id, "snum": season_num, "ecnt": len(episodes_raw)},
-            )
-            session.commit()
-            season_row = session.execute(
-                text("SELECT season_id FROM seasons WHERE show_id = :sid AND season_number = :snum"),
-                {"sid": show_id, "snum": season_num},
-            ).fetchone()
-            if not season_row:
-                continue
-            season_id = season_row[0]
-            # Upsert episodes
+            today = date_type.today()
+
+            # Parse episodes, keeping only those that have already aired
+            aired_episodes = []
             for ep in episodes_raw:
                 try:
                     ep_num = int(ep.get("Episode", 0))
@@ -919,11 +905,16 @@ async def _sync_tv_seasons(
                     air_date = None
                     air_str = ep.get("Released", "N/A")
                     if air_str and air_str != "N/A":
-                        try:
-                            from datetime import datetime as dt
-                            air_date = dt.strptime(air_str, "%d %b %Y").date()
-                        except ValueError:
-                            pass
+                        from datetime import datetime as dt
+                        for fmt in ("%Y-%m-%d", "%d %b %Y"):
+                            try:
+                                air_date = dt.strptime(air_str, fmt).date()
+                                break
+                            except ValueError:
+                                continue
+                    # Skip episodes that haven't aired yet
+                    if air_date is None or air_date > today:
+                        continue
                     rating = None
                     rating_str = ep.get("imdbRating", "N/A")
                     if rating_str and rating_str != "N/A":
@@ -932,6 +923,37 @@ async def _sync_tv_seasons(
                         except Exception:
                             pass
                     ep_imdb_id = ep.get("imdbID") or None
+                    aired_episodes.append({
+                        "ep_num": ep_num, "title": title, "air_date": air_date,
+                        "rating": rating, "imdb_id": ep_imdb_id,
+                    })
+                except Exception:
+                    pass
+
+            # Skip entire season if no episodes have aired
+            if not aired_episodes:
+                continue
+
+            # Upsert season row with actual aired episode count
+            session.execute(
+                text("""
+                    INSERT INTO seasons (show_id, season_number, episode_count)
+                    VALUES (:sid, :snum, :ecnt)
+                    ON DUPLICATE KEY UPDATE episode_count = :ecnt
+                """),
+                {"sid": show_id, "snum": season_num, "ecnt": len(aired_episodes)},
+            )
+            session.commit()
+            season_row = session.execute(
+                text("SELECT season_id FROM seasons WHERE show_id = :sid AND season_number = :snum"),
+                {"sid": show_id, "snum": season_num},
+            ).fetchone()
+            if not season_row:
+                continue
+            season_id = season_row[0]
+            # Upsert aired episodes
+            for ep in aired_episodes:
+                try:
                     session.execute(
                         text("""
                             INSERT INTO episodes (season_id, episode_number, title, air_date, imdb_rating, imdb_id)
@@ -939,14 +961,52 @@ async def _sync_tv_seasons(
                             ON DUPLICATE KEY UPDATE
                                 title = :title, air_date = :adate, imdb_rating = :rating
                         """),
-                        {"sid": season_id, "enum": ep_num, "title": title,
-                         "adate": air_date, "rating": rating, "imdb_id": ep_imdb_id},
+                        {"sid": season_id, "enum": ep["ep_num"], "title": ep["title"],
+                         "adate": ep["air_date"], "rating": ep["rating"], "imdb_id": ep["imdb_id"]},
                     )
                 except Exception:
                     pass
             session.commit()
         except Exception:
             pass
+
+
+def cleanup_unaired_episodes(session: Session) -> dict:
+    """Delete episodes that haven't aired yet and seasons left empty after cleanup."""
+    from datetime import date as date_type
+    today = date_type.today()
+
+    # Delete episodes with no air_date or air_date in the future
+    ep_result = session.execute(
+        text("DELETE FROM episodes WHERE air_date IS NULL OR air_date > :today"),
+        {"today": today},
+    )
+    deleted_episodes = ep_result.rowcount
+
+    # Delete seasons that now have zero episodes
+    season_result = session.execute(
+        text("""
+            DELETE s FROM seasons s
+            LEFT JOIN episodes e ON e.season_id = s.season_id
+            WHERE e.episode_id IS NULL
+        """),
+    )
+    deleted_seasons = season_result.rowcount
+
+    # Update episode_count on remaining seasons
+    session.execute(
+        text("""
+            UPDATE seasons s
+            SET s.episode_count = (SELECT COUNT(*) FROM episodes e WHERE e.season_id = s.season_id)
+        """),
+    )
+
+    session.commit()
+    return {
+        "detail": f"Removed {deleted_episodes} unaired episodes and {deleted_seasons} empty seasons.",
+        "deleted_episodes": deleted_episodes,
+        "deleted_seasons": deleted_seasons,
+    }
 
 
 # ── Sync State ────────────────────────────────────────────────────────────────
