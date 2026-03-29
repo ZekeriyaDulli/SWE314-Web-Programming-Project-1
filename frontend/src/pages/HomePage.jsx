@@ -1,158 +1,251 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import MovieCard from '../components/MovieCard'
-import ErrorBanner from '../components/ErrorBanner'
 
-const GLASS = {
-  background: 'rgba(255, 255, 255, 0.05)',
-  backdropFilter: 'blur(16px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-  border: '1px solid rgba(255, 255, 255, 0.10)',
-  borderRadius: '16px',
-  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)',
+const PILL = (active) => ({
+  padding: '5px 18px',
+  borderRadius: '20px',
+  fontSize: '0.78rem',
+  fontWeight: 700,
+  letterSpacing: '0.4px',
+  border: active ? '1px solid rgba(201,68,85,0.7)' : '1px solid rgba(255,255,255,0.12)',
+  background: active ? 'rgba(201,68,85,0.25)' : 'rgba(255,255,255,0.05)',
+  color: active ? '#e07080' : 'rgba(255,255,255,0.5)',
+  cursor: 'pointer',
+  transition: 'all 0.2s',
+})
+
+function SectionHeader({ title, children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
+      <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#fff' }}>{title}</h2>
+      {children}
+    </div>
+  )
 }
 
-const INPUT = {
-  background: 'rgba(0, 0, 0, 0.3)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: '10px',
-  color: '#fff',
+function ShowGrid({ shows, loading }) {
+  if (loading) return <div className="text-center py-4 g-muted">Loading...</div>
+  if (!shows.length) return <div className="text-center py-4 g-muted">No titles found.</div>
+  return (
+    <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+      {shows.map(show => <MovieCard key={show.show_id} show={show} />)}
+    </div>
+  )
 }
 
 export default function HomePage() {
-  const [shows, setShows] = useState([])
-  const [genres, setGenres] = useState([])
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ genre_id: '', min_year: '', max_year: '', min_rating: '', search: '' })
-  const [typeFilter, setTypeFilter] = useState('')
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const suggestRef = useRef(null)
+  const debounceRef = useRef(null)
 
+  const [trendingType, setTrendingType] = useState('movie')
+  const [trendingMovies, setTrendingMovies] = useState([])
+  const [trendingSeries, setTrendingSeries] = useState([])
+  const [trendingLoading, setTrendingLoading] = useState(true)
+
+  const [latestMovies, setLatestMovies] = useState([])
+  const [latestMoviesLoading, setLatestMoviesLoading] = useState(true)
+
+  const [latestSeries, setLatestSeries] = useState([])
+  const [latestSeriesLoading, setLatestSeriesLoading] = useState(true)
+
+  // Fetch trending (both types in one call) on mount
   useEffect(() => {
-    api.get('/shows/genres').then(r => setGenres(r.data)).catch(() => {})
-    fetchShows({})
+    api.get('/shows/trending')
+      .then(r => { setTrendingMovies(r.data.movies); setTrendingSeries(r.data.series) })
+      .catch(() => { setTrendingMovies([]); setTrendingSeries([]) })
+      .finally(() => setTrendingLoading(false))
   }, [])
 
-  const fetchShows = (f) => {
-    setLoading(true); setError(null)
-    const params = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== '' && v !== null))
-    api.get('/shows', { params })
-      .then(r => setShows(r.data))
-      .catch(err => setError(err.response?.data?.detail ?? 'Failed to load movies.'))
-      .finally(() => setLoading(false))
+  // Fetch latest movies + series on mount
+  useEffect(() => {
+    api.get('/shows/latest', { params: { show_type: 'movie' } })
+      .then(r => setLatestMovies(r.data))
+      .catch(() => setLatestMovies([]))
+      .finally(() => setLatestMoviesLoading(false))
+
+    api.get('/shows/latest', { params: { show_type: 'series' } })
+      .then(r => setLatestSeries(r.data))
+      .catch(() => setLatestSeries([]))
+      .finally(() => setLatestSeriesLoading(false))
+  }, [])
+
+  // Search suggestions with debounce
+  useEffect(() => {
+    if (query.length < 2) { setSuggestions([]); return }
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      api.get('/shows/suggestions', { params: { q: query } })
+        .then(r => { setSuggestions(r.data); setShowSuggestions(true) })
+        .catch(() => setSuggestions([]))
+    }, 300)
+    return () => clearTimeout(debounceRef.current)
+  }, [query])
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (suggestRef.current && !suggestRef.current.contains(e.target)) setShowSuggestions(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleViewAll = () => {
+    if (query.trim()) navigate(`/browse?search=${encodeURIComponent(query.trim())}`)
+    else navigate('/browse')
   }
 
-  const handleReset = () => {
-    const empty = { genre_id: '', min_year: '', max_year: '', min_rating: '', search: '' }
-    setFilters(empty); setTypeFilter(''); fetchShows({})
-  }
-
-  const visibleShows = typeFilter ? shows.filter(s => s.show_type === typeFilter) : shows
+  const trendingShows = trendingType === 'movie' ? trendingMovies : trendingSeries
 
   return (
     <div className="g-page">
       <div className="container py-4">
-        <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-        {/* Filter bar */}
-        <div style={{ ...GLASS, padding: '1rem', marginBottom: '1.5rem' }}>
-          <form onSubmit={e => { e.preventDefault(); fetchShows(filters) }}>
+        {/* ── Hero search ──────────────────────────────────── */}
+        <div style={{ textAlign: 'center', padding: '3rem 0 2.5rem' }}>
+          <h1 style={{
+            fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '0 0 0.5rem',
+            background: 'linear-gradient(135deg, #e06070, #c94455)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>
+            Find Movies, TV Shows and more
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+            Search your archive by title, actor, or director
+          </p>
 
-            {/* Mobile: top row — type pills + filter toggle */}
-            <div className="d-flex d-md-none align-items-center justify-content-between mb-2 flex-wrap gap-2">
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[['', 'All'], ['movie', 'Movies'], ['series', 'Series']].map(([val, label]) => (
-                  <button key={val} type="button" onClick={() => setTypeFilter(val)} style={{
-                    padding: '4px 14px', borderRadius: '20px', fontSize: '0.75rem',
-                    fontWeight: 700, letterSpacing: '0.4px',
-                    border: typeFilter === val ? '1px solid rgba(201,68,85,0.7)' : '1px solid rgba(255,255,255,0.12)',
-                    background: typeFilter === val ? 'rgba(201,68,85,0.25)' : 'rgba(255,255,255,0.05)',
-                    color: typeFilter === val ? '#e07080' : 'rgba(255,255,255,0.5)',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                  }}>{label}</button>
-                ))}
-              </div>
-              <button type="button" onClick={() => setFiltersOpen(o => !o)} style={{
-                padding: '4px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 600,
-                border: '1px solid rgba(255,255,255,0.18)',
-                background: filtersOpen ? 'rgba(201,68,85,0.18)' : 'rgba(255,255,255,0.07)',
-                color: filtersOpen ? '#e07080' : 'rgba(255,255,255,0.65)',
-                cursor: 'pointer', transition: 'all 0.2s',
+          <div ref={suggestRef} style={{ position: 'relative', maxWidth: '640px', margin: '0 auto' }}>
+            <form onSubmit={e => { e.preventDefault(); handleViewAll() }}
+              style={{ display: 'flex', gap: '0' }}>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                placeholder="Enter keywords..."
+                style={{
+                  flex: 1,
+                  padding: '14px 20px',
+                  fontSize: '1rem',
+                  background: 'rgba(0,0,0,0.4)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRight: 'none',
+                  borderRadius: '14px 0 0 14px',
+                  color: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+              />
+              <button type="submit" style={{
+                padding: '14px 24px',
+                background: 'linear-gradient(135deg, #c94455, #81262E)',
+                border: 'none',
+                borderRadius: '0 14px 14px 0',
+                color: '#fff',
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
               }}>
-                {filtersOpen ? '✕ Hide Filters' : '⚙ Filters'}
+                Search
               </button>
-            </div>
+            </form>
 
-            {/* Filter fields — always visible on md+, collapsible on mobile */}
-            <div className={`row g-2 align-items-end${filtersOpen ? '' : ' d-none d-md-flex'}`}>
-              <div className="col-md-3 col-12">
-                <label className="g-label">Genre</label>
-                <select className="form-select form-select-sm" style={INPUT}
-                  value={filters.genre_id} onChange={e => setFilters(f => ({ ...f, genre_id: e.target.value }))}>
-                  <option value="">All Genres</option>
-                  {genres.map(g => <option key={g.genre_id} value={g.genre_id}>{g.name}</option>)}
-                </select>
-              </div>
-              <div className="col-md-2 col-6">
-                <label className="g-label">Min Year</label>
-                <input type="number" className="form-control form-control-sm" style={INPUT}
-                  placeholder="1900" min="1900" max="2026" value={filters.min_year}
-                  onChange={e => setFilters(f => ({ ...f, min_year: e.target.value }))} />
-              </div>
-              <div className="col-md-2 col-6">
-                <label className="g-label">Max Year</label>
-                <input type="number" className="form-control form-control-sm" style={INPUT}
-                  placeholder="2026" min="1900" max="2026" value={filters.max_year}
-                  onChange={e => setFilters(f => ({ ...f, max_year: e.target.value }))} />
-              </div>
-              <div className="col-md-2 col-12">
-                <label className="g-label">Min Rating</label>
-                <input type="number" className="form-control form-control-sm" style={INPUT}
-                  placeholder="0–10" min="0" max="10" step="1" value={filters.min_rating}
-                  onChange={e => setFilters(f => ({ ...f, min_rating: e.target.value }))} />
-              </div>
-              <div className="col-md-3 col-12">
-                <label className="g-label">Search</label>
-                <input type="text" className="form-control form-control-sm" style={INPUT}
-                  placeholder="Title, actor, director..." value={filters.search}
-                  onChange={e => setFilters(f => ({ ...f, search: e.target.value }))} />
-              </div>
-            </div>
-
-            {/* Apply/Reset + type pills (desktop) */}
-            <div className="d-flex gap-2 mt-3 align-items-center flex-wrap">
-              <button type="submit" className="btn btn-sm g-btn-accent px-4">Apply Filters</button>
-              <button type="button" className="btn btn-sm g-btn-ghost px-3" onClick={handleReset}>Reset</button>
-              {/* Type pills — desktop only (mobile version is above) */}
-              <div className="d-none d-md-flex" style={{ marginLeft: 'auto', gap: '6px' }}>
-                {[['', 'All'], ['movie', 'Movies'], ['series', 'Series']].map(([val, label]) => (
-                  <button key={val} type="button" onClick={() => setTypeFilter(val)} style={{
-                    padding: '4px 14px', borderRadius: '20px', fontSize: '0.75rem',
-                    fontWeight: 700, letterSpacing: '0.4px',
-                    border: typeFilter === val ? '1px solid rgba(201,68,85,0.7)' : '1px solid rgba(255,255,255,0.12)',
-                    background: typeFilter === val ? 'rgba(201,68,85,0.25)' : 'rgba(255,255,255,0.05)',
-                    color: typeFilter === val ? '#e07080' : 'rgba(255,255,255,0.5)',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                  }}>{label}</button>
+            {/* Suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                marginTop: '4px',
+                background: 'rgba(20, 14, 26, 0.97)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '14px',
+                overflow: 'hidden',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+              }}>
+                {suggestions.map(s => (
+                  <Link
+                    key={s.show_id}
+                    to={`/shows/${s.show_id}`}
+                    onClick={() => setShowSuggestions(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '14px',
+                      padding: '12px 16px',
+                      color: '#fff', textDecoration: 'none',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {s.poster_url ? (
+                      <img src={s.poster_url} alt="" style={{ width: 50, height: 75, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 50, height: 75, borderRadius: 8, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 3px', fontSize: '0.92rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.title}
+                      </p>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
+                        {s.release_year || '—'} &middot; {s.show_type === 'series' ? 'TV Show' : 'Movie'}
+                        {s.imdb_rating && <> &middot; IMDb {s.imdb_rating}</>}
+                      </span>
+                    </div>
+                  </Link>
                 ))}
+                <button
+                  onClick={handleViewAll}
+                  style={{
+                    display: 'block', width: '100%',
+                    padding: '12px 16px',
+                    background: 'rgba(201,68,85,0.1)',
+                    border: 'none',
+                    color: '#e07080',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,68,85,0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(201,68,85,0.1)'}
+                >
+                  View all results
+                </button>
               </div>
-            </div>
-          </form>
+            )}
+          </div>
         </div>
 
-        {/* Results */}
-        {loading ? (
-          <div className="text-center py-5 g-muted">Loading titles...</div>
-        ) : visibleShows.length === 0 ? (
-          <div className="text-center py-5 g-muted">No titles found matching your filters.</div>
-        ) : (
-          <>
-            <p className="g-muted small mb-3">{visibleShows.length} title{visibleShows.length !== 1 ? 's' : ''} found</p>
-            <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
-              {visibleShows.map(show => <MovieCard key={show.show_id} show={show} />)}
+        {/* ── Trending ─────────────────────────────────────── */}
+        <section style={{ marginBottom: '3rem' }}>
+          <SectionHeader title="Trending">
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button type="button" onClick={() => setTrendingType('movie')} style={PILL(trendingType === 'movie')}>Movies</button>
+              <button type="button" onClick={() => setTrendingType('series')} style={PILL(trendingType === 'series')}>TV Shows</button>
             </div>
-          </>
-        )}
+          </SectionHeader>
+          <ShowGrid shows={trendingShows} loading={trendingLoading} />
+        </section>
+
+        {/* ── Latest Movies ────────────────────────────────── */}
+        <section style={{ marginBottom: '3rem' }}>
+          <SectionHeader title="Latest Movies" />
+          <ShowGrid shows={latestMovies} loading={latestMoviesLoading} />
+        </section>
+
+        {/* ── Latest TV Shows ──────────────────────────────── */}
+        <section style={{ marginBottom: '3rem' }}>
+          <SectionHeader title="Latest TV Shows" />
+          <ShowGrid shows={latestSeries} loading={latestSeriesLoading} />
+        </section>
+
       </div>
     </div>
   )
