@@ -261,6 +261,7 @@ class FilterParams(BaseModel):
     max_year: Optional[int] = Field(default=None, ge=1888, le=2030)
     min_rating: Optional[Decimal] = Field(default=None, ge=Decimal("0.0"), le=Decimal("10.0"))
     search: Optional[str] = Field(default=None, max_length=200)
+    show_type: Optional[str] = Field(default=None, pattern=r"^(movie|series)$")
 
     @model_validator(mode="after")
     def check_year_range(self):

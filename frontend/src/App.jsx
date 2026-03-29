@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
+import BrowsePage from './pages/BrowsePage'
 import ShowDetailPage from './pages/ShowDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -10,7 +11,6 @@ import WatchlistDetailPage from './pages/WatchlistDetailPage'
 import HistoryPage from './pages/HistoryPage'
 import AdminUploadPage from './pages/AdminUploadPage'
 import AdminSyncPage from './pages/AdminSyncPage'
-import DownloadsPage from './pages/DownloadsPage'
 import ChangePasswordPage from './pages/ChangePasswordPage'
 
 /* Fixed ambient orbs — these sit behind ALL content and give
@@ -61,13 +61,13 @@ export default function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/browse" element={<BrowsePage />} />
           <Route path="/shows/:id" element={<ShowDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/watchlists" element={<WatchlistsPage />} />
           <Route path="/watchlists/:id" element={<WatchlistDetailPage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/admin/sync" element={<AdminSyncPage />} />
