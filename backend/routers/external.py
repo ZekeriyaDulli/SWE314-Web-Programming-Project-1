@@ -86,6 +86,15 @@ def delete_show(
     return {"detail": "Show deleted."}
 
 
+@router.post("/cleanup-unaired")
+def cleanup_unaired(
+    session: Session = Depends(get_session),
+    _=Depends(require_admin),
+):
+    result = services.cleanup_unaired_episodes(session)
+    return result
+
+
 @router.post("/add-show")
 def add_single_show(
     body: ShowCreate,
