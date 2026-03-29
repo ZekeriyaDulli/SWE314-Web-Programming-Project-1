@@ -131,7 +131,7 @@ def get_user_by_id(user_id: int, session: Session) -> dict:
 _SHOWS_SELECT = """
     SELECT
         s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
-        s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+        s.total_seasons, s.plot, s.imdb_rating, s.imdb_votes, s.poster_url, s.trailer_url, s.added_at,
         GROUP_CONCAT(DISTINCT a.full_name SEPARATOR ', ') AS actors,
         GROUP_CONCAT(DISTINCT d.full_name SEPARATOR ', ') AS directors,
         ROUND(AVG(ur.rating), 2) AS platform_avg,
@@ -174,7 +174,7 @@ def get_shows(filters: FilterParams, session: Session, user_id: Optional[int] = 
     sql = f"""
         SELECT
             s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
-            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            s.total_seasons, s.plot, s.imdb_rating, s.imdb_votes, s.poster_url, s.trailer_url, s.added_at,
             GROUP_CONCAT(DISTINCT a.full_name SEPARATOR ', ') AS actors,
             GROUP_CONCAT(DISTINCT d.full_name SEPARATOR ', ') AS directors,
             ROUND(AVG(ur.rating), 2) AS platform_avg,
@@ -207,7 +207,7 @@ def get_trending(session: Session, user_id: Optional[int] = None) -> list[dict]:
     sql = """
         SELECT
             s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
-            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            s.total_seasons, s.plot, s.imdb_rating, s.imdb_votes, s.poster_url, s.trailer_url, s.added_at,
             ROUND(AVG(ur.rating), 2) AS platform_avg,
             COUNT(DISTINCT ur.user_id) AS rating_count,
             MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched,
@@ -243,7 +243,7 @@ def get_latest(show_type: str, session: Session, user_id: Optional[int] = None) 
     sql = """
         SELECT
             s.show_id, s.imdb_id, s.show_type, s.title, s.release_year, s.duration_minutes,
-            s.total_seasons, s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at,
+            s.total_seasons, s.plot, s.imdb_rating, s.imdb_votes, s.poster_url, s.trailer_url, s.added_at,
             ROUND(AVG(ur.rating), 2) AS platform_avg,
             COUNT(DISTINCT ur.user_id) AS rating_count,
             MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched
@@ -282,7 +282,7 @@ def get_show_detail(show_id: int, user_id: Optional[int], session: Session) -> d
             {_SHOWS_SELECT}
             WHERE s.show_id = :sid
             GROUP BY s.show_id, s.imdb_id, s.title, s.release_year, s.duration_minutes,
-                     s.plot, s.imdb_rating, s.poster_url, s.trailer_url, s.added_at
+                     s.plot, s.imdb_rating, s.imdb_votes, s.poster_url, s.trailer_url, s.added_at
         """),
         {"sid": show_id},
     )
@@ -1103,6 +1103,15 @@ def _apply_omdb_data(show: dict, api_data: dict, session: Session) -> None:
             minutes = int(raw_runtime.split()[0])
             if minutes != show.get("duration_minutes"):
                 updates.append(("duration_minutes", minutes))
+        except ValueError:
+            pass
+
+    raw_votes = api_data.get("imdbVotes", "")
+    if raw_votes and raw_votes != "N/A":
+        try:
+            votes = int(raw_votes.replace(",", ""))
+            if votes != show.get("imdb_votes"):
+                updates.append(("imdb_votes", votes))
         except ValueError:
             pass
 

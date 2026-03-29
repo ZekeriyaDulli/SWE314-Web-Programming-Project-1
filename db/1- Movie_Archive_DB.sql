@@ -32,6 +32,9 @@ ALTER TABLE shows
 ALTER TABLE shows
     ADD COLUMN trailer_url VARCHAR(20) DEFAULT NULL;
 
+ALTER TABLE shows
+    ADD COLUMN imdb_votes INT DEFAULT NULL AFTER imdb_rating;
+
 create table genres (
 	genre_id int auto_increment primary key,
     name varchar (50) NOT NULL unique
