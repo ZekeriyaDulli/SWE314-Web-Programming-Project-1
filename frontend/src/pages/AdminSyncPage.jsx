@@ -28,6 +28,19 @@ export default function AdminSyncPage() {
     }, 2000)
   }
 
+  const [cleanupResult, setCleanupResult] = useState(null)
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+
+  const handleCleanup = async () => {
+    setError(null); setCleanupResult(null); setCleanupLoading(true)
+    try {
+      const { data } = await api.post('/admin/cleanup-unaired')
+      setCleanupResult(data.detail)
+    } catch (err) {
+      setError(err.response?.data?.detail ?? 'Cleanup failed.')
+    } finally { setCleanupLoading(false) }
+  }
+
   const handleStartSync = async (missingOnly = false) => {
     setError(null)
     try {
@@ -81,6 +94,16 @@ export default function AdminSyncPage() {
               </button>
               <p className="g-muted mt-1" style={{ fontSize: '0.72rem' }}>Only titles missing metadata, poster, or trailer</p>
             </div>
+          </div>
+
+          <hr style={{ borderColor: 'rgba(255,255,255,0.07)', margin: '0 0 1rem' }} />
+          <div className="mb-4">
+            <button className="btn btn-sm g-btn-danger px-4" disabled={cleanupLoading} onClick={handleCleanup}
+              style={{ opacity: cleanupLoading ? 0.6 : 1 }}>
+              {cleanupLoading ? 'Cleaning...' : 'Cleanup Unaired Episodes'}
+            </button>
+            <p className="g-muted mt-1" style={{ fontSize: '0.72rem' }}>Removes episodes with no air date or future air dates, and seasons left empty</p>
+            {cleanupResult && <p style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 600, marginTop: 6 }}>{cleanupResult}</p>}
           </div>
 
           {status.status !== 'idle' && (
