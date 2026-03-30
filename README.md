@@ -5,7 +5,7 @@ A full-stack web application for discovering, tracking, and rating movies and TV
 > **Course:** Web Programming — Semester 6
 > **Stack:** FastAPI · MySQL · React 18 · Vite · Bootstrap 5
 
-[**Live demo:**](https://movie-archive-zekeriyadullis-projects.vercel.app)
+[**Live demo --->**](https://movie-archive-zekeriyadullis-projects.vercel.app)
 
 ---
 
