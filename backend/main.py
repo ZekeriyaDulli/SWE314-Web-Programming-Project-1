@@ -30,8 +30,10 @@ app = FastAPI(
 from config import settings as _settings
 
 _origins = ["http://localhost:5173"]
-if _settings.frontend_url not in _origins:
-    _origins.append(_settings.frontend_url)
+for _url in (_settings.frontend_url or "").split(","):
+    _url = _url.strip().rstrip("/")
+    if _url and _url not in _origins:
+        _origins.append(_url)
 
 app.add_middleware(
     CORSMiddleware,
