@@ -51,25 +51,6 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                {/* User dropdown */}
-                <div className="dropdown">
-                  <button className="btn btn-sm g-btn-ghost px-3 dropdown-toggle" data-bs-toggle="dropdown">
-                    {user?.first_name} {user?.last_name}
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    <li><Link className="dropdown-item" to="/watchlists">My Watchlists</Link></li>
-                    <li><Link className="dropdown-item" to="/history">Watch History</Link></li>
-                    <li><Link className="dropdown-item" to="/downloads">My Downloads</Link></li>
-                    <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
-                    <li><hr className="dropdown-divider g-divider" /></li>
-                    <li>
-                      <button className="dropdown-item" style={{ color: '#f87171' }} onClick={handleLogout}>
-                        Logout
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-
                 {/* Admin dropdown */}
                 {isAdmin && (
                   <div className="dropdown">
@@ -89,6 +70,25 @@ export default function Navbar() {
                     </ul>
                   </div>
                 )}
+
+                {/* User dropdown */}
+                <div className="dropdown">
+                  <button className="btn btn-sm g-btn-ghost px-3 dropdown-toggle" data-bs-toggle="dropdown">
+                    {user?.first_name} {user?.last_name}
+                  </button>
+                  <ul className="dropdown-menu dropdown-menu-end">
+                    <li><Link className="dropdown-item" to="/watchlists">My Watchlists</Link></li>
+                    <li><Link className="dropdown-item" to="/history">Watch History</Link></li>
+                    <li><Link className="dropdown-item" to="/downloads">My Downloads</Link></li>
+                    <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
+                    <li><hr className="dropdown-divider g-divider" /></li>
+                    <li>
+                      <button className="dropdown-item" style={{ color: '#f87171' }} onClick={handleLogout}>
+                        Logout
+                      </button>
+                    </li>
+                  </ul>
+                </div>
               </>
             )}
           </div>
