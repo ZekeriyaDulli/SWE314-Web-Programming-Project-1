@@ -28,7 +28,8 @@ export default function RegisterPage() {
     setLoading(true); setError(null)
     try {
       const { data } = await api.post('/auth/register', form)
-      login(data.access_token, data.user); navigate('/')
+      const { data: user } = await api.get('/auth/me', { headers: { Authorization: `Bearer ${data.access_token}` } })
+      login(data.access_token, user); navigate('/')
     } catch (err) {
       setError(err.response?.data?.detail ?? 'Registration failed. Please try again.')
     } finally { setLoading(false) }

@@ -12,13 +12,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(data: UserCreate, session: Session = Depends(get_session)):
     result = services.register_user(data, session)
-    return TokenResponse(access_token=result["token"], user=UserResponse(**result["user"]))
+    return TokenResponse(access_token=result["token"])
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: UserLogin, session: Session = Depends(get_session)):
     result = services.login_user(data, session)
-    return TokenResponse(access_token=result["token"], user=UserResponse(**result["user"]))
+    return TokenResponse(access_token=result["token"])
 
 
 @router.get("/me", response_model=UserResponse)
