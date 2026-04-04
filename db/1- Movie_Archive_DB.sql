@@ -35,6 +35,12 @@ ALTER TABLE shows
 ALTER TABLE shows
     ADD COLUMN imdb_votes INT DEFAULT NULL AFTER imdb_rating;
 
+ALTER TABLE shows 
+	ADD COLUMN latest_air_date DATE DEFAULT NULL AFTER imdb_votes;
+
+ALTER TABLE shows 
+	ADD COLUMN sync_status TINYINT DEFAULT 0 AFTER latest_air_date;
+
 create table genres (
 	genre_id int auto_increment primary key,
     name varchar (50) NOT NULL unique
