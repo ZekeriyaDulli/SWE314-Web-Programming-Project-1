@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from database import get_session
 from dependencies import get_current_user
-from schemas import WatchlistCreate, WatchlistItemCreate, WatchlistResponse, WatchlistWithShowsResponse
+from schemas import WatchlistCreate, WatchlistItemCreate, WatchlistResponse, WatchlistUpdate, WatchlistWithShowsResponse
 import services
 
 router = APIRouter(prefix="/watchlists", tags=["watchlists"])
@@ -22,6 +22,11 @@ def create_watchlist(data: WatchlistCreate, session: Session = Depends(get_sessi
 @router.get("/{watchlist_id}", response_model=WatchlistWithShowsResponse)
 def get_watchlist(watchlist_id: int, session: Session = Depends(get_session), current_user: dict = Depends(get_current_user)):
     return services.get_watchlist_detail(watchlist_id, current_user["user_id"], session)
+
+
+@router.put("/{watchlist_id}", response_model=WatchlistResponse)
+def update_watchlist(watchlist_id: int, data: WatchlistUpdate, session: Session = Depends(get_session), current_user: dict = Depends(get_current_user)):
+    return services.update_watchlist(watchlist_id, current_user["user_id"], data, session)
 
 
 @router.delete("/{watchlist_id}", status_code=204)

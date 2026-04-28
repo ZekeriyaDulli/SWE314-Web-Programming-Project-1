@@ -29,6 +29,12 @@ body {
   background-size: cover;
 }
 
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
 #root {
   min-height: 100vh;
   background: transparent !important;
@@ -213,6 +219,13 @@ html { scrollbar-width: thin; scrollbar-color: #c94455 rgba(28,22,42,0.8); }
   background-clip: text;
   letter-spacing: -0.3px;
   text-decoration: none !important;
+}
+
+/* Hamburger menu icon fix */
+.navbar-toggler { border: none !important; }
+.navbar-toggler:focus { box-shadow: none !important; }
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
 }
 
 /* Accent button */

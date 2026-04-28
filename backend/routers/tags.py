@@ -24,6 +24,11 @@ def tag_show(show_id: int, data: ShowTagCreate, session: Session = Depends(get_s
     return services.add_tag_to_show(show_id, data, admin["user_id"], session)
 
 
+@router.delete("/shows/{show_id}/tags/{tag_id}", status_code=204)
+def remove_tag(show_id: int, tag_id: int, session: Session = Depends(get_session), admin: dict = Depends(require_admin)):
+    services.remove_tag_from_show(show_id, tag_id, session)
+
+
 @router.get("/shows/{show_id}/tags", response_model=list[TagResponse])
 def get_show_tags(show_id: int, session: Session = Depends(get_session)):
     return services.get_show_tags(show_id, session)
