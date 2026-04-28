@@ -127,7 +127,7 @@ function GenreDropdown({ genres, value, onChange }) {
         <div style={{
           position: 'absolute', top: '100%', left: 0, zIndex: 60,
           marginTop: 4,
-          minWidth: '420px',
+          minWidth: 'min(420px, calc(100vw - 2rem))',
           background: 'rgba(20, 14, 26, 0.97)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',

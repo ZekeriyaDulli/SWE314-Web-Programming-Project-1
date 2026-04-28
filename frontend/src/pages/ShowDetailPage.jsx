@@ -89,6 +89,15 @@ export default function ShowDetailPage() {
       setActionMsg({ type: 'danger', text: err.response?.data?.detail ?? 'Failed to apply tag.' })
     }
   }
+  
+  const handleRemoveTag = async (tagId) => {
+    try {
+      await api.delete(`/shows/${id}/tags/${tagId}`)
+      setShow(s => ({ ...s, tags: s.tags.filter(t => t.tag_id !== tagId) }))
+    } catch (err) {
+      setActionMsg({ type: 'danger', text: err.response?.data?.detail ?? 'Failed to remove tag.' })
+    }
+  }
 
   if (error) return <div className="container py-5"><ErrorBanner message={error} /></div>
   if (!show) return <div className="text-center py-5 g-muted">Loading...</div>
@@ -385,7 +394,17 @@ export default function ShowDetailPage() {
               <div className="d-flex flex-wrap gap-2 mb-2 align-items-center">
                 <span className="g-dim small">Tags:</span>
                 {show.tags?.length > 0
-                  ? show.tags.map(t => <span key={t.tag_id} className="g-badge-tag">{t.name}</span>)
+                  ? show.tags.map(t => (
+                    <span key={t.tag_id} className="g-badge-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      {t.name}
+                      {isAdmin && (
+                        <button onClick={() => handleRemoveTag(t.tag_id)} style={{
+                          background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)',
+                          cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', lineHeight: 1,
+                        }}>x</button>
+                      )}
+                    </span>
+                  ))
                   : <span className="g-dim small">None yet</span>
                 }
               </div>

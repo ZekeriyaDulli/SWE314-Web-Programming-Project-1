@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import PosterImage from './PosterImage'
 import { useAuth } from '../context/AuthContext'
@@ -24,17 +24,34 @@ const GLASS_CARD_HOVER = {
   boxShadow: '0 24px 60px rgba(0,0,0,0.55), 0 0 40px rgba(201,68,85,0.2)',
 }
 
-export default function MovieCard({ show }) {
+export default function MovieCard({ show, watchlistMode, onRemove }) {
   const { isLoggedIn } = useAuth()
   const [hovered, setHovered]       = useState(false)
   const [mode, setMode]             = useState('default') // 'default' | 'watchlist' | 'success' | 'error'
   const [watchlists, setWatchlists] = useState([])
   const [wlLoading, setWlLoading]   = useState(false)
+  const cardRef = useRef(null)
 
   const resetMode = () => setMode('default')
 
+    // Click-outside to dismiss overlay on mobile
+  const handleClickOutside = useCallback((e) => {
+    if (cardRef.current && !cardRef.current.contains(e.target)) {
+      setHovered(false)
+      resetMode()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (hovered) {
+      document.addEventListener('click', handleClickOutside, true)
+      return () => document.removeEventListener('click', handleClickOutside, true)
+    }
+  }, [hovered, handleClickOutside])
+
   const handleOpenWatchlist = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     setWlLoading(true)
     try {
       const r = await api.get('/watchlists')
@@ -49,6 +66,7 @@ export default function MovieCard({ show }) {
   }
 
   const handleSelect = async (e, watchlistId) => {
+    e.stopPropagation()
     e.preventDefault()
     try {
       await api.post(`/watchlists/${watchlistId}/shows`, { show_id: show.show_id })
@@ -60,12 +78,21 @@ export default function MovieCard({ show }) {
     }
   }
 
+    // Mobile: first tap shows overlay, second tap on buttons navigates
+  const handleCardClick = (e) => {
+    if (!hovered) {
+      setHovered(true)
+    }
+  }
+
   return (
     <div className="col">
       <div
+        ref={cardRef}
         style={hovered ? GLASS_CARD_HOVER : GLASS_CARD}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); resetMode() }}
+        onClick={handleCardClick}
       >
         {/* Poster */}
         <div style={{ position: 'relative', aspectRatio: '2/3', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
@@ -87,7 +114,7 @@ export default function MovieCard({ show }) {
               : <span className="g-badge-movie">Movie</span>
             }
             {show.imdb_rating && <span className="g-badge-imdb">IMDb: {show.imdb_rating}</span>}
-            {show.is_watched && <span className="g-badge-watched">✓ Watched</span>}
+            {show.is_watched && <span className="g-badge-watched">Watched</span>}
           </div>
 
           {/* Default hover overlay — buttons at bottom */}
@@ -113,63 +140,73 @@ export default function MovieCard({ show }) {
               >
                 View Details
               </Link>
-              {isLoggedIn && (
+              {watchlistMode ? (
+                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove?.(show.show_id) }} style={{
+                  background: 'rgba(248,113,113,0.15)', color: '#f87171',
+                  border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px',
+                  padding: '6px 0', fontSize: '0.78rem', fontWeight: 600,
+                  cursor: 'pointer', width: '100%',
+                }}>
+                  Remove
+                </button>
+              ) : isLoggedIn && (
                 <button onClick={handleOpenWatchlist} style={{
                   background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.85)',
                   border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px',
                   padding: '6px 0', fontSize: '0.78rem', fontWeight: 600,
                   cursor: 'pointer', width: '100%',
                 }}>
-                  {wlLoading ? '...' : '＋ Watchlist'}
+                  {wlLoading ? '...' : '+ Watchlist'}
                 </button>
               )}
             </div>
           </div>
 
           {/* Watchlist picker — separate full-poster layer, flex-bounded scroll */}
-          <div style={{
-            position: 'absolute', inset: 0, overflow: 'hidden',
-            background: 'rgba(10,5,15,0.96)',
-            display: 'flex', flexDirection: 'column',
-            padding: '10px',
-            opacity: mode === 'watchlist' ? 1 : 0,
-            pointerEvents: mode === 'watchlist' ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease',
-          }}>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px', flexShrink: 0 }}>
-              Add to Watchlist
-            </p>
-            {/* flex: 1 + minHeight: 0 — the only reliable way to bound a scroll child in flex */}
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {watchlists.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', textAlign: 'center', margin: '8px 0' }}>
-                  No watchlists yet
-                </p>
-              ) : watchlists.map(wl => (
-                <button key={wl.watchlist_id} onClick={e => handleSelect(e, wl.watchlist_id)} style={{
-                  background: 'rgba(255,255,255,0.07)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px',
-                  padding: '5px 8px', fontSize: '0.73rem', fontWeight: 500,
-                  cursor: 'pointer', textAlign: 'left', flexShrink: 0,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {wl.name}
-                </button>
-              ))}
-            </div>
-            <button onClick={e => { e.preventDefault(); resetMode() }} style={{
-              background: 'transparent', color: 'rgba(255,255,255,0.35)',
-              border: 'none', fontSize: '0.7rem', cursor: 'pointer',
-              padding: '6px 0 0', textAlign: 'left', flexShrink: 0,
+          {!watchlistMode && (
+            <div style={{
+              position: 'absolute', inset: 0, overflow: 'hidden',
+              background: 'rgba(10,5,15,0.96)',
+              display: 'flex', flexDirection: 'column',
+              padding: '10px',
+              opacity: mode === 'watchlist' ? 1 : 0,
+              pointerEvents: mode === 'watchlist' ? 'auto' : 'none',
+              transition: 'opacity 0.2s ease',
             }}>
-              ← Back
-            </button>
-          </div>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px', flexShrink: 0 }}>
+                Add to Watchlist
+              </p>
+              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {watchlists.length === 0 ? (
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', textAlign: 'center', margin: '8px 0' }}>
+                    No watchlists yet
+                  </p>
+                ) : watchlists.map(wl => (
+                  <button key={wl.watchlist_id} onClick={e => handleSelect(e, wl.watchlist_id)} style={{
+                    background: 'rgba(255,255,255,0.07)', color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px',
+                    padding: '5px 8px', fontSize: '0.73rem', fontWeight: 500,
+                    cursor: 'pointer', textAlign: 'left', flexShrink: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {wl.name}
+                  </button>
+                ))}
+              </div>
+              <button onClick={e => { e.preventDefault(); e.stopPropagation(); resetMode() }} style={{
+                background: 'transparent', color: 'rgba(255,255,255,0.35)',
+                border: 'none', fontSize: '0.7rem', cursor: 'pointer',
+                padding: '6px 0 0', textAlign: 'left', flexShrink: 0,
+              }}>
+                Back
+              </button>
+            </div>
+          )}
 
           {/* Success */}
           {mode === 'success' && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,5,15,0.85)' }}>
-              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>✓ Added!</p>
+              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>Added!</p>
             </div>
           )}
 
@@ -189,7 +226,7 @@ export default function MovieCard({ show }) {
             {show.title || 'Unknown Title'}
           </p>
           <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', display: 'block', marginBottom: '6px' }}>
-            {show.release_year || '—'}
+            {show.release_year || '\u2014'}
           </span>
           {show.platform_avg && (
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>

@@ -22,7 +22,10 @@ export default function Navbar() {
     >
       <div className="container">
         {/* Brand */}
-        <Link to="/" className="g-brand navbar-brand mb-0">🎬 Movie Archive</Link>
+                <Link to="/" className="g-brand navbar-brand mb-0">Movie Archive</Link>
+
+        {/* Browse — always visible on mobile (outside collapse) */}
+        <Link to="/browse" className="btn btn-sm g-btn-ghost px-3 d-lg-none" style={{ fontWeight: 600, marginLeft: 'auto', marginRight: '8px' }}>Browse</Link>
 
         {/* Mobile hamburger */}
         <button
@@ -40,7 +43,7 @@ export default function Navbar() {
 
         {/* Collapsible menu */}
         <div className="collapse navbar-collapse" id="navMenu">
-          <div className="d-flex align-items-center gap-3 py-2 py-lg-0">
+          <div className="d-none d-lg-flex align-items-center gap-3 py-2 py-lg-0">
             <Link to="/browse" className="btn btn-sm g-btn-ghost px-3" style={{ fontWeight: 600 }}>Browse</Link>
           </div>
           <div className="ms-auto d-flex align-items-center gap-2 flex-wrap py-2 py-lg-0">
@@ -79,7 +82,6 @@ export default function Navbar() {
                   <ul className="dropdown-menu dropdown-menu-end">
                     <li><Link className="dropdown-item" to="/watchlists">My Watchlists</Link></li>
                     <li><Link className="dropdown-item" to="/history">Watch History</Link></li>
-                    <li><Link className="dropdown-item" to="/downloads">My Downloads</Link></li>
                     <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
                     <li><hr className="dropdown-divider g-divider" /></li>
                     <li>
