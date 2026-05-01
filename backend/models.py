@@ -143,20 +143,3 @@ class ShowTag(SQLModel, table=True):
     tagged_by_user_id: int = Field(foreign_key="users.user_id", primary_key=True)
     tagged_at: datetime = Field(default_factory=datetime.utcnow)
 
-
-class Collection(SQLModel, table=True):
-    __tablename__ = "collections"
-    collection_id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(max_length=100)
-    description: Optional[str] = None
-    created_by_user_id: int = Field(foreign_key="users.user_id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class CollectionShow(SQLModel, table=True):
-    """Advanced M:N — collection × show with ordinal payload (display_order)."""
-    __tablename__ = "collection_shows"
-    collection_id: int = Field(foreign_key="collections.collection_id", primary_key=True)
-    show_id: int = Field(foreign_key="shows.show_id", primary_key=True)
-    display_order: int = Field(default=0, ge=0)
-    added_at: datetime = Field(default_factory=datetime.utcnow)

@@ -224,7 +224,6 @@ INSERT INTO watchlists (user_id, name, description) VALUES
 (1, 'Favorites', NULL),
 (1, 'Watch Later', NULL),
 (2, 'Top Picks', NULL),
-(2, 'My Collection', NULL),
 (3, 'Sci-Fi', NULL),
 (3, 'Documentaries', NULL),
 (4, 'Popular', NULL),

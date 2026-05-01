@@ -19,8 +19,6 @@ from sqlmodel import Session
 
 from config import settings
 from schemas import (
-    CollectionCreate,
-    CollectionShowAdd,
     FilterParams,
     RatingCreate,
     RatingUpdate,
@@ -744,105 +742,6 @@ def add_tag_to_show(show_id: int, data: ShowTagCreate, user_id: int, session: Se
     return dict(tag)
 
 
-def remove_tag_from_show(show_id: int, tag_id: int, session: Session) -> None:
-    result = session.execute(
-        text("DELETE FROM show_tags WHERE show_id = :sid AND tag_id = :tid"),
-        {"sid": show_id, "tid": tag_id},
-    )
-    session.commit()
-    if result.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Tag not found on this show.")
-
-
-# ── Collections ───────────────────────────────────────────────────────────────
-
-def get_all_collections(session: Session) -> list[dict]:
-    result = session.execute(
-        text("""
-            SELECT c.collection_id, c.name, c.description, c.created_by_user_id, c.created_at,
-                   COUNT(cs.show_id) AS shows_count
-            FROM collections c
-            LEFT JOIN collection_shows cs ON cs.collection_id = c.collection_id
-            GROUP BY c.collection_id, c.name, c.description, c.created_by_user_id, c.created_at
-            ORDER BY c.created_at DESC
-        """)
-    )
-    return [dict(r) for r in result.mappings().all()]
-
-
-def create_collection(user_id: int, data: CollectionCreate, session: Session) -> dict:
-    session.execute(
-        text("INSERT INTO collections (name, description, created_by_user_id, created_at) VALUES (:name, :desc, :uid, NOW())"),
-        {"name": data.name.strip(), "desc": data.description, "uid": user_id},
-    )
-    session.commit()
-    result = session.execute(
-        text("""
-            SELECT c.collection_id, c.name, c.description, c.created_by_user_id, c.created_at,
-                   0 AS shows_count
-            FROM collections c
-            WHERE c.created_by_user_id = :uid
-            ORDER BY c.collection_id DESC LIMIT 1
-        """),
-        {"uid": user_id},
-    )
-    return dict(result.mappings().fetchone())
-
-
-def get_collection_shows(collection_id: int, session: Session) -> list[dict]:
-    check = session.execute(
-        text("SELECT collection_id FROM collections WHERE collection_id = :cid"), {"cid": collection_id}
-    )
-    if not check.fetchone():
-        raise HTTPException(status_code=404, detail="Collection not found.")
-    result = session.execute(
-        text("""
-            SELECT s.show_id, s.imdb_id, s.title, s.release_year, s.poster_url, s.imdb_rating, s.added_at,
-                   NULL AS platform_avg, NULL AS rating_count
-            FROM shows s
-            JOIN collection_shows cs ON cs.show_id = s.show_id
-            WHERE cs.collection_id = :cid
-            ORDER BY cs.display_order ASC, cs.added_at ASC
-        """),
-        {"cid": collection_id},
-    )
-    return [dict(r) for r in result.mappings().all()]
-
-
-def add_show_to_collection(collection_id: int, data: CollectionShowAdd, user_id: int, session: Session) -> None:
-    check = session.execute(
-        text("SELECT collection_id FROM collections WHERE collection_id = :cid AND created_by_user_id = :uid"),
-        {"cid": collection_id, "uid": user_id},
-    )
-    if not check.fetchone():
-        raise HTTPException(status_code=403, detail="Collection not found or access denied.")
-    try:
-        session.execute(
-            text("INSERT INTO collection_shows (collection_id, show_id, display_order, added_at) VALUES (:cid, :sid, :order, NOW())"),
-            {"cid": collection_id, "sid": data.show_id, "order": data.display_order},
-        )
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        if "Duplicate entry" in str(e):
-            raise HTTPException(status_code=409, detail="This movie is already in the collection.")
-        raise HTTPException(status_code=500, detail="Failed to add movie to collection. Please try again.")
-
-
-def remove_show_from_collection(collection_id: int, show_id: int, user_id: int, session: Session) -> None:
-    check = session.execute(
-        text("SELECT collection_id FROM collections WHERE collection_id = :cid AND created_by_user_id = :uid"),
-        {"cid": collection_id, "uid": user_id},
-    )
-    if not check.fetchone():
-        raise HTTPException(status_code=403, detail="Collection not found or access denied.")
-    session.execute(
-        text("DELETE FROM collection_shows WHERE collection_id = :cid AND show_id = :sid"),
-        {"cid": collection_id, "sid": show_id},
-    )
-    session.commit()
-
-
 # ── External API (OMDb) ───────────────────────────────────────────────────────
 
 OMDB_API_URL = "http://www.omdbapi.com/"
@@ -1289,7 +1188,7 @@ def delete_show(show_id: int, session: Session) -> None:
         r[0] for r in session.execute(text("SHOW TABLES")).fetchall()
     }
     for tbl in ("show_genres", "show_directors", "show_actors", "show_tags",
-                "watchlist_items", "user_ratings", "watch_history", "collection_shows"):
+                "watchlist_items", "user_ratings", "watch_history"):
         if tbl in existing:
             session.execute(text(f"DELETE FROM {tbl} WHERE show_id = :sid"), {"sid": show_id})
 
