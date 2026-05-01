@@ -79,7 +79,6 @@ export default function Navbar() {
                   <ul className="dropdown-menu dropdown-menu-end">
                     <li><Link className="dropdown-item" to="/watchlists">My Watchlists</Link></li>
                     <li><Link className="dropdown-item" to="/history">Watch History</Link></li>
-                    <li><Link className="dropdown-item" to="/downloads">My Downloads</Link></li>
                     <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
                     <li><hr className="dropdown-divider g-divider" /></li>
                     <li>
