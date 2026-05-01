@@ -96,7 +96,7 @@ Build a full-stack Movie Archive web application called "Movie Archive" from scr
    - `WatchlistCreate`: `name: str = Field(min_length=1, max_length=100)`, `description: Optional[str] = Field(default=None, max_length=500)`
    - `FilterParams`: `genre_id`, `min_year: Optional[int] = Field(ge=1888, le=2030)`, `max_year`, `min_rating: Optional[Decimal]`, `search: Optional[str] = Field(max_length=200)`; add `@model_validator` that swaps `min_year`/`max_year` if inverted
    - `SyncStatusResponse`: `status: str` (one of `idle | running | complete | error`), `current: int`, `total: int`, `message: str`, `progress_percentage: float`
-   - Add remaining schemas for `HistoryResponse`, `TagCreate`, `TagResponse`, `CollectionCreate`, `CollectionResponse`, `WatchlistWithShowsResponse`, etc.
+   - Add remaining schemas for `HistoryResponse`, `TagCreate`, `TagResponse` `WatchlistWithShowsResponse`, etc.
 
 ---
 
@@ -182,7 +182,7 @@ Thin routes: every route body must be 3–5 lines — inject the session, call t
    - Create `app = FastAPI(title="Movie Archive API", version="1.0.0")`
    - Use `@asynccontextmanager` lifespan to create and close a shared `httpx.AsyncClient(timeout=httpx.Timeout(5.0))` stored as `main.http_client`
    - Add `CORSMiddleware` with `allow_origins=[settings.frontend_url]`, `allow_credentials=True`, `allow_methods=["*"]`, `allow_headers=["*"]`
-   - Include routers: `/shows`, `/users`, `/ratings`, `/watchlists`, `/history`, `/tags`, `/collections`, `/admin`
+   - Include routers: `/shows`, `/users`, `/ratings`, `/watchlists`, `/history`, `/tags`, `/admin`
 
 2. Create the following router files in `routers/`:
 

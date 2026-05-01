@@ -75,7 +75,6 @@ movie_archive/
 │       ├── watchlists.py           # CRUD /watchlists and /watchlists/{id}/shows
 │       ├── history.py              # GET /history, POST /history/{show_id}
 │       ├── tags.py                 # GET/POST /tags, POST /shows/{id}/tags (admin-only)
-│       ├── collections.py          # CRUD /collections (data model layer)
 │       └── external.py             # POST /admin/sync/start, GET /admin/sync/status,
 │                                   # POST /admin/upload-csv, GET /admin/omdb/search
 │

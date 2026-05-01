@@ -218,33 +218,6 @@ class ShowTagCreate(BaseModel):
     tag_id: int = Field(gt=0)
 
 
-# ── COLLECTIONS ──────────────────────────────────────────────────────────────
-
-class CollectionCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    description: Optional[str] = Field(default=None, max_length=1000)
-
-
-class CollectionUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
-    description: Optional[str] = None
-
-
-class CollectionResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    collection_id: int
-    name: str
-    description: Optional[str] = None
-    created_by_user_id: int
-    created_at: datetime
-    shows_count: int = 0
-
-
-class CollectionShowAdd(BaseModel):
-    show_id: int = Field(gt=0)
-    display_order: int = Field(default=0, ge=0)
-
-
 # ── ADMIN / EXTERNAL ─────────────────────────────────────────────────────────
 
 class SyncStatusResponse(BaseModel):
