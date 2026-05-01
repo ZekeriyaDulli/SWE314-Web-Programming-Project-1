@@ -22,7 +22,8 @@ export default function Navbar() {
     >
       <div className="container">
         {/* Brand */}
-        <Link to="/" className="g-brand navbar-brand mb-0">🎬 Movie Archive</Link>
+        <Link to="/" className="g-brand navbar-brand mb-0">🎬 Movie
+        Archive</Link>
 
         {/* Mobile hamburger */}
         <button
