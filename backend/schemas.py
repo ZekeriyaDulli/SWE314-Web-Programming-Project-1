@@ -84,7 +84,9 @@ class ShowResponse(BaseModel):
     platform_avg: Optional[float] = None
     rating_count: Optional[int] = None
     is_watched: bool = False
-
+    genre_ids: Optional[str] = None
+    genre_names: Optional[str] = None
+    watchlist_added_at: Optional[datetime] = None
 
 class GenreResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

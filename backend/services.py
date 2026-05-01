@@ -27,6 +27,7 @@ from schemas import (
     UserCreate,
     UserLogin,
     WatchlistCreate,
+    WatchlistUpdate,
 )
 
 # ── Crypto ────────────────────────────────────────────────────────────────────
@@ -217,7 +218,7 @@ def get_trending(session: Session, user_id: Optional[int] = None) -> list[dict]:
         WHERE s.imdb_rating IS NOT NULL
           AND (st.tag_id = 9 OR s.release_year >= :cutoff_year)
         GROUP BY s.show_id
-        ORDER BY is_trending_tag DESC, s.imdb_rating DESC, s.release_year DESC
+        ORDER BY is_trending_tag DESC, s.release_year DESC, s.imdb_rating DESC
     """
     result = session.execute(text(sql), params)
     rows = [dict(r) for r in result.mappings().all()]
@@ -250,7 +251,7 @@ def get_latest(show_type: str, session: Session, user_id: Optional[int] = None) 
         LEFT JOIN watch_history wh ON wh.show_id = s.show_id AND wh.user_id = :uid
         WHERE s.show_type = :show_type
         GROUP BY s.show_id
-        ORDER BY s.release_year DESC, s.imdb_rating DESC
+        ORDER BY GREATEST(COALESCE(s.latest_air_date, '1900-01-01'), DATE(CONCAT(COALESCE(s.release_year, 1900), '-01-01'))) DESC, s.imdb_rating DESC
         LIMIT 12
     """
     result = session.execute(text(sql), params)
@@ -553,6 +554,38 @@ def create_watchlist(user_id: int, data: WatchlistCreate, session: Session) -> d
     return dict(result.mappings().fetchone())
 
 
+def update_watchlist(watchlist_id: int, user_id: int, data: WatchlistUpdate, session: Session) -> dict:
+    check = session.execute(
+        text("SELECT watchlist_id FROM watchlists WHERE watchlist_id = :wid AND user_id = :uid"),
+        {"wid": watchlist_id, "uid": user_id},
+    )
+    if not check.fetchone():
+        raise HTTPException(status_code=403, detail="Watchlist not found or access denied.")
+    updates = []
+    params: dict = {"wid": watchlist_id}
+    if data.name is not None:
+        updates.append("name = :name")
+        params["name"] = data.name.strip()
+    if data.description is not None:
+        updates.append("description = :desc")
+        params["desc"] = data.description
+    if updates:
+        session.execute(text(f"UPDATE watchlists SET {', '.join(updates)} WHERE watchlist_id = :wid"), params)
+        session.commit()
+    result = session.execute(
+        text("""
+            SELECT w.watchlist_id, w.user_id, w.name, w.description, w.created_at,
+                   COUNT(wi.show_id) AS items_count
+            FROM watchlists w
+            LEFT JOIN watchlist_items wi ON wi.watchlist_id = w.watchlist_id
+            WHERE w.watchlist_id = :wid
+            GROUP BY w.watchlist_id, w.user_id, w.name, w.description, w.created_at
+        """),
+        {"wid": watchlist_id},
+    )
+    return dict(result.mappings().fetchone())
+
+
 def get_watchlist_detail(watchlist_id: int, user_id: int, session: Session) -> dict:
     result = session.execute(
         text("""
@@ -574,15 +607,31 @@ def get_watchlist_detail(watchlist_id: int, user_id: int, session: Session) -> d
 
     shows_result = session.execute(
         text("""
-            SELECT s.show_id, s.imdb_id, s.title, s.release_year, s.poster_url, s.imdb_rating
+            SELECT s.show_id, s.imdb_id, s.show_type, s.title, s.release_year,
+                s.duration_minutes, s.total_seasons, s.imdb_rating, s.imdb_votes,
+                s.poster_url, s.trailer_url, s.added_at,
+                ROUND(AVG(ur.rating), 2) AS platform_avg,
+                COUNT(DISTINCT ur.user_id) AS rating_count,
+                MAX(CASE WHEN wh.show_id IS NOT NULL THEN 1 ELSE 0 END) AS is_watched,
+                GROUP_CONCAT(DISTINCT g.genre_id ORDER BY g.name SEPARATOR ',') AS genre_ids,
+                GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ',') AS genre_names,
+                wi.added_at AS watchlist_added_at
             FROM watchlist_items wi
             JOIN shows s ON s.show_id = wi.show_id
+            LEFT JOIN user_ratings ur ON ur.show_id = s.show_id
+            LEFT JOIN watch_history wh ON wh.show_id = s.show_id AND wh.user_id = :uid
+            LEFT JOIN show_genres sg ON sg.show_id = s.show_id
+            LEFT JOIN genres g ON g.genre_id = sg.genre_id
             WHERE wi.watchlist_id = :wid
+            GROUP BY s.show_id, wi.added_at
             ORDER BY wi.added_at DESC
         """),
-        {"wid": watchlist_id},
+        {"wid": watchlist_id, "uid": user_id},
     )
-    return {**dict(watchlist), "shows": [dict(r) for r in shows_result.mappings().all()]}
+    shows = [dict(r) for r in shows_result.mappings().all()]
+    for row in shows:
+        row["is_watched"] = bool(row.get("is_watched", 0))
+    return {**dict(watchlist), "shows": shows}
 
 
 def delete_watchlist(watchlist_id: int, user_id: int, session: Session) -> None:
@@ -879,6 +928,22 @@ async def _sync_tv_seasons(
         except Exception:
             pass
 
+    # Update latest_air_date on the show
+    try:
+        session.execute(
+            text("""
+                UPDATE shows SET latest_air_date = (
+                    SELECT MAX(e.air_date) FROM episodes e
+                    JOIN seasons se ON se.season_id = e.season_id
+                    WHERE se.show_id = :sid
+                ) WHERE show_id = :sid
+            """),
+            {"sid": show_id},
+        )
+        session.commit()
+    except Exception:
+        pass
+
 
 def cleanup_unaired_episodes(session: Session) -> dict:
     """Delete episodes that haven't aired yet and seasons left empty after cleanup."""
@@ -930,7 +995,7 @@ def get_sync_status() -> SyncStatusResponse:
     return SyncStatusResponse(**_sync_state)
 
 
-async def run_full_sync(session: Session, client: httpx.AsyncClient, missing_only: bool = False) -> None:
+async def run_full_sync(session: Session, client: httpx.AsyncClient, missing_only: bool = False, force: bool = False) -> None:
     async with _sync_lock:
         if _sync_state["status"] == "running":
             return
@@ -944,7 +1009,13 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient, missing_onl
                 "WHERE title IS NULL OR imdb_rating IS NULL OR poster_url IS NULL OR trailer_url IS NULL"
             )
         else:
-            sql = text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url FROM shows")
+            if force:
+                sql = text("SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url FROM shows")
+            else:
+                sql = text(
+                    "SELECT show_id, imdb_id, title, release_year, duration_minutes, plot, imdb_rating, poster_url, trailer_url "
+                    "FROM shows WHERE sync_status != 1"
+                )
         result = session.execute(sql)
         shows = [dict(r) for r in result.mappings().all()]
         total = len(shows)
@@ -993,6 +1064,12 @@ async def run_full_sync(session: Session, client: httpx.AsyncClient, missing_onl
                         total_seasons = 0
                     if total_seasons > 0:
                         await _sync_tv_seasons(show["show_id"], show["imdb_id"], total_seasons, client, session)
+                # Mark show as synced
+                session.execute(
+                    text("UPDATE shows SET sync_status = 1 WHERE show_id = :sid"),
+                    {"sid": show["show_id"]},
+                )
+                session.commit()
             except Exception:
                 session.rollback()  # don't let one bad show poison the session
 
