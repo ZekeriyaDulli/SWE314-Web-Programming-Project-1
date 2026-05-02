@@ -294,7 +294,12 @@ export default function ShowDetailPage() {
                 {isLoggedIn && (
                   <div className="d-flex flex-wrap gap-2 align-items-center">
                     <button
-                      onClick={() => setShowWlPicker(p => !p)}
+                      onClick={() => {
+                        if (!showWlPicker) {
+                          api.get('/watchlists').then(r => setWatchlists(r.data)).catch(() => {})
+                        }
+                        setShowWlPicker(p => !p)
+                      }}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '8px',
                         background: 'rgba(255,255,255,0.08)', color: '#fff',
