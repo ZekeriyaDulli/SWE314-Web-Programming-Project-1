@@ -742,6 +742,16 @@ def add_tag_to_show(show_id: int, data: ShowTagCreate, user_id: int, session: Se
     return dict(tag)
 
 
+def remove_tag_from_show(show_id: int, tag_id: int, session: Session) -> None:
+    result = session.execute(
+        text("DELETE FROM show_tags WHERE show_id = :sid AND tag_id = :tid"),
+        {"sid": show_id, "tid": tag_id},
+    )
+    session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Tag not found on this show.")
+
+
 # ── External API (OMDb) ───────────────────────────────────────────────────────
 
 OMDB_API_URL = "http://www.omdbapi.com/"
